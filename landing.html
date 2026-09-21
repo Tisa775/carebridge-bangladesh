@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareBridge Bangladesh - Humanitarian Aid & Emergency Response</title>
+  <meta name="description" content="Real-time humanitarian crisis management, NGO coordination, and emergency response platform in Bangladesh.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+  <div class="landing-container">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+      <div class="nav-brand">
+        <svg class="brand-icon-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 38.5C22 38.5 6 28 6 15.5C6 9.7 10.7 5 16.5 5C19.8 5 21.5 6.7 22 7.5C22.5 6.7 24.2 5 27.5 5C33.3 5 38 9.7 38 15.5C38 28 22 38.5 22 38.5Z" stroke="#EF4444" stroke-width="2.8" fill="#FFF5F5"/>
+          <path d="M12 24C15 20 18 20 22 24C26 20 29 20 32 24" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M10 27H34" stroke="#059669" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M16 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M22 27V24" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M28 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-title"><span class="care">Care</span><span class="bridge">Bridge</span></span>
+          <span class="brand-country">Bangladesh</span>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#categories">Categories</a>
+        <a href="user-portal.html" class="nav-link-demo" style="background:#059669; color:#fff; border:none;">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>Citizen Portal</span>
+        </a>
+        <a href="login.html" class="nav-link-btn">Sign In</a>
+        <button type="button" class="nav-link-demo" onclick="loginDemoUser('Emergency Coordinator')">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Admin Demo</span>
+        </button>
+        <a href="signup.html" class="nav-link-btn nav-link-primary">Get Started</a>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <i class="fa-solid fa-shield-heart"></i>
+          <span>Humanitarian Aid Platform • Bangladesh</span>
+        </div>
+        <h1 class="hero-title">
+          Bridging <span class="text-gradient">Care</span> &<br>
+          <span class="text-gradient">Emergency Response</span>
+        </h1>
+        <p class="hero-subtitle">
+          Real-time crisis management, NGO coordination, and volunteer dispatch across Bangladesh. 
+          Connecting those in need with help when it matters most.
+        </p>
+        <div class="hero-actions">
+          <a href="user-portal.html" class="btn-hero-primary" style="background:linear-gradient(135deg, #059669, #047857); border:none; box-shadow:0 8px 24px rgba(5,150,105,0.4);">
+            <i class="fa-solid fa-user-shield"></i>
+            <span>Citizen Portal</span>
+          </a>
+          <button type="button" class="btn-hero-demo" onclick="loginDemoUser('Emergency Coordinator')">
+            <i class="fa-solid fa-bolt-lightning"></i>
+            <span>⚡ Try Admin Demo</span>
+          </button>
+          <a href="login.html" class="btn-hero-secondary">
+            <span>Sign In</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="hero-stat-number">12K+</span>
+            <span class="hero-stat-label">Cases Resolved</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-number">500+</span>
+            <span class="hero-stat-label">NGO Partners</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-number">18min</span>
+            <span class="hero-stat-label">Avg Response</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-3d-scene">
+          <div class="floating-card card-1">
+            <i class="fa-solid fa-heart-pulse"></i>
+            <span>Medical</span>
+          </div>
+          <div class="floating-card card-2">
+            <i class="fa-solid fa-child"></i>
+            <span>Child Care</span>
+          </div>
+          <div class="floating-card card-3">
+            <i class="fa-solid fa-person-cane"></i>
+            <span>Elderly</span>
+          </div>
+          <div class="floating-card card-4">
+            <i class="fa-solid fa-wheelchair"></i>
+            <span>Disability</span>
+          </div>
+          <div class="floating-card card-5">
+            <i class="fa-solid fa-house-chimney-crack"></i>
+            <span>Shelter</span>
+          </div>
+          <div class="floating-card card-6">
+            <i class="fa-solid fa-bowl-rice"></i>
+            <span>Food Relief</span>
+          </div>
+          <div class="mobile-3d-icon">
+            <svg viewBox="0 0 120 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="15" y="10" width="90" height="180" rx="18" fill="url(#mobileGrad)" stroke="#059669" stroke-width="3"/>
+              <rect x="25" y="25" width="70" height="140" rx="8" fill="#0b1320" stroke="#233354" stroke-width="2"/>
+              <circle cx="60" cy="178" r="8" fill="#1c2b48" stroke="#059669" stroke-width="2"/>
+              <path d="M45 178H75" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+              <rect x="40" y="35" width="40" height="6" rx="3" fill="#233354"/>
+              <rect x="35" y="50" width="50" height="80" rx="4" fill="url(#screenGrad)" opacity="0.9"/>
+              <path d="M42 58L50 52L58 62L68 50L78 60" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+              <circle cx="60" cy="100" r="12" fill="none" stroke="#ef4444" stroke-width="2.5" opacity="0.8"/>
+              <path d="M56 100L59 103L65 97" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+              <defs>
+                <linearGradient id="mobileGrad" x1="15" y1="10" x2="105" y2="190" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#1e293b"/>
+                  <stop offset="1" stop-color="#0f172a"/>
+                </linearGradient>
+                <linearGradient id="screenGrad" x1="35" y1="50" x2="85" y2="130" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#059669" stop-opacity="0.15"/>
+                  <stop offset="1" stop-color="#10b981" stop-opacity="0.05"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="mobile-glow"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3D Categories Section -->
+    <section id="categories" class="categories-section">
+      <div class="section-header">
+        <h2 class="section-title">How We <span class="text-gradient">Help</span></h2>
+        <p class="section-subtitle">Comprehensive aid categories designed for rapid emergency response</p>
+      </div>
+      <div class="categories-grid">
+        <div class="category-3d-card" data-category="child">
+          <div class="card-inner">
+            <div class="card-icon">
+              <i class="fa-solid fa-child"></i>
+            </div>
+            <h3>Child Assistance</h3>
+            <p>Protection, shelter, and reunification for unaccompanied minors</p>
+            <div class="card-stats">
+              <span><i class="fa-solid fa-check-circle"></i> 24/7 Response</span>
+              <span><i class="fa-solid fa-shield-heart"></i> Verified NGOs</span>
+            </div>
+          </div>
+        </div>
+        <div class="category-3d-card" data-category="elderly">
+          <div class="card-inner">
+            <div class="card-icon">
+              <i class="fa-solid fa-person-cane"></i>
+            </div>
+            <h3>Elderly Care</h3>
+            <p>Medical support, shelter, and essential supplies for senior citizens</p>
+            <div class="card-stats">
+              <span><i class="fa-solid fa-check-circle"></i> Medical Aid</span>
+              <span><i class="fa-solid fa-house-medical"></i> Shelters</span>
+            </div>
+          </div>
+        </div>
+        <div class="category-3d-card" data-category="medical">
+          <div class="card-inner">
+            <div class="card-icon">
+              <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+            <h3>Medical Emergency</h3>
+            <p>Rapid triage, ambulance dispatch, and hospital coordination</p>
+            <div class="card-stats">
+              <span><i class="fa-solid fa-truck-medical"></i> Ambulance</span>
+              <span><i class="fa-solid fa-hospital"></i> Hospitals</span>
+            </div>
+          </div>
+        </div>
+        <div class="category-3d-card" data-category="disability">
+          <div class="card-inner">
+            <div class="card-icon">
+              <i class="fa-solid fa-wheelchair"></i>
+            </div>
+            <h3>Disability Support</h3>
+            <p>Mobility aids, rehabilitation, and specialized care access</p>
+            <div class="card-stats">
+              <span><i class="fa-solid fa-wheelchair-move"></i> Mobility</span>
+              <span><i class="fa-solid fa-hand-holding-heart"></i> Support</span>
+            </div>
+          </div>
+        </div>
+        <div class="category-3d-card" data-category="shelter">
+          <div class="card-inner">
+            <div class="card-icon">
+              <i class="fa-solid fa-house-chimney-crack"></i>
+            </div>
+            <h3>Shelter & Housing</h3>
+            <p>Emergency shelters, temporary housing, and safe relocation</p>
+            <div class="card-stats">
+              <span><i class="fa-solid fa-bed"></i> 500+ Beds</span>
+              <span><i class="fa-solid fa-location-dot"></i> 12 Locations</span>
+            </div>
+          </div>
+        </div>
+        <div class="category-3d-card" data-category="food">
+          <div class="card-inner">
+            <div class="card-icon">
+              <i class="fa-solid fa-bowl-rice"></i>
+            </div>
+            <h3>Food & Relief</h3>
+            <p>Food ration distribution, clean water, and essential supplies</p>
+            <div class="card-stats">
+              <span><i class="fa-solid fa-utensils"></i> Daily Meals</span>
+              <span><i class="fa-solid fa-truck-fast"></i> Delivery</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+      <div class="section-header">
+        <h2 class="section-title">Platform <span class="text-gradient">Features</span></h2>
+        <p class="section-subtitle">Built for speed, reliability, and impact</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <h3>Real-time Dispatch</h3>
+          <p>Instant volunteer and NGO coordination with GPS tracking</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <h3>AI Triage</h3>
+          <p>Machine learning prioritizes cases based on urgency and proximity</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-map-location-dot"></i>
+          </div>
+          <h3>Live Crisis Map</h3>
+          <p>Interactive map showing hotspots, shelters, and active responses</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h3>Secure & Verified</h3>
+          <p>Government-verified NGOs with encrypted communications</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <div class="cta-card">
+        <h2>Ready to Make a Difference?</h2>
+        <p>Join CareBridge today and help us reach more people in need across Bangladesh.</p>
+        <div class="cta-actions">
+          <button type="button" class="btn-hero-demo" onclick="loginDemoUser('Emergency Coordinator')">
+            <i class="fa-solid fa-bolt-lightning"></i>
+            <span>⚡ Launch Demo Dashboard</span>
+          </button>
+          <a href="signup.html" class="btn-cta-primary">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Create Free Account</span>
+          </a>
+          <a href="login.html" class="btn-cta-secondary">
+            <span>Sign In</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <svg class="brand-icon-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 38.5C22 38.5 6 28 6 15.5C6 9.7 10.7 5 16.5 5C19.8 5 21.5 6.7 22 7.5C22.5 6.7 24.2 5 27.5 5C33.3 5 38 9.7 38 15.5C38 28 22 38.5 22 38.5Z" stroke="#EF4444" stroke-width="2.8" fill="#FFF5F5"/>
+            <path d="M12 24C15 20 18 20 22 24C26 20 29 20 32 24" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M10 27H34" stroke="#059669" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M16 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M22 27V24" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M28 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <div class="brand-text">
+            <span class="brand-title"><span class="care">Care</span><span class="bridge">Bridge</span></span>
+            <span class="brand-country">Bangladesh</span>
+          </div>
+        </div>
+        <p class="footer-text">Connecting humanity in times of crisis. Built with care for Bangladesh.</p>
+        <div class="footer-links">
+          <a href="login.html">Sign In</a>
+          <a href="signup.html">Sign Up</a>
+          <a href="javascript:void(0)" onclick="loginDemoUser('Emergency Coordinator')">Demo Access</a>
+          <a href="#features">Features</a>
+          <a href="#categories">Categories</a>
+        </div>
+        <p class="footer-copyright">&copy; 2026 CareBridge Bangladesh. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script src="landing.js"></script>
+</body>
+</html>

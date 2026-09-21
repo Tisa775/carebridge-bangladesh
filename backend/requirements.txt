@@ -1,0 +1,33 @@
+# CareBridge Bangladesh - Backend Dependencies
+# Install with: uv pip install -r requirements.txt
+
+# Core API framework
+fastapi==0.115.0
+
+# ASGI server with reload + performance extras
+uvicorn[standard]==0.30.6
+
+# Database ORM
+sqlalchemy==2.0.35
+
+# Password hashing (used directly in routers/auth.py)
+bcrypt==4.2.0
+
+# JWT token handling
+python-jose[cryptography]==3.3.0
+
+# Form/multipart file uploads
+python-multipart==0.0.12
+
+# Async file operations
+aiofiles==24.1.0
+
+# Request/response validation + email support
+pydantic[email]==2.9.2
+
+# MySQL database driver & support
+pymysql>=1.1.0
+cryptography>=41.0.0
+
+# Environment variable loading (.env file support)
+python-dotenv>=1.0.0

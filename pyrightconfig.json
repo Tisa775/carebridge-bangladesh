@@ -1,0 +1,22 @@
+{
+  "include": [
+    "backend"
+  ],
+  "exclude": [
+    "**/.venv",
+    "**/__pycache__",
+    "**/node_modules",
+    "**/.git"
+  ],
+  "venvPath": "backend",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUndefinedVariable": true,
+  "reportGeneralTypeIssues": true,
+  "extraPaths": [
+    "backend"
+  ]
+}

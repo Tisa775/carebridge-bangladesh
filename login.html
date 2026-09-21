@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - CareBridge Bangladesh</title>
+  <meta name="description" content="Sign in to CareBridge Bangladesh humanitarian aid platform.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+  <div class="auth-container">
+    <!-- Background Elements -->
+    <div class="auth-bg-elements">
+      <div class="bg-circle bg-circle-1"></div>
+      <div class="bg-circle bg-circle-2"></div>
+      <div class="bg-circle bg-circle-3"></div>
+    </div>
+
+    <!-- Left Side - Branding -->
+    <div class="auth-brand-side">
+      <div class="brand-content">
+        <svg class="brand-icon-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 38.5C22 38.5 6 28 6 15.5C6 9.7 10.7 5 16.5 5C19.8 5 21.5 6.7 22 7.5C22.5 6.7 24.2 5 27.5 5C33.3 5 38 9.7 38 15.5C38 28 22 38.5 22 38.5Z" stroke="#EF4444" stroke-width="2.8" fill="#FFF5F5"/>
+          <path d="M12 24C15 20 18 20 22 24C26 20 29 20 32 24" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M10 27H34" stroke="#059669" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M16 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M22 27V24" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M28 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-title"><span class="care">Care</span><span class="bridge">Bridge</span></span>
+          <span class="brand-country">Bangladesh</span>
+        </div>
+        <h1 class="brand-headline">Connecting Humanity<br>in Times of Crisis</h1>
+        <p class="brand-subtitle">Real-time humanitarian aid coordination, NGO partnership, and emergency response across Bangladesh.</p>
+        <div class="brand-stats">
+          <div class="brand-stat">
+            <span class="brand-stat-number">12K+</span>
+            <span class="brand-stat-label">Cases Resolved</span>
+          </div>
+          <div class="brand-stat">
+            <span class="brand-stat-number">500+</span>
+            <span class="brand-stat-label">NGO Partners</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side - Login Form -->
+    <div class="auth-form-side">
+      <div class="auth-form-wrapper">
+        <div class="auth-form-header">
+          <h2 class="auth-form-title">Welcome back</h2>
+          <p class="auth-form-subtitle">Sign in to your CareBridge account</p>
+        </div>
+
+        <div class="demo-login-box">
+          <div class="demo-login-title">
+            <i class="fa-solid fa-bolt-lightning"></i>
+            <span>Quick Access Demo</span>
+          </div>
+          <p class="demo-login-desc">Explore the live humanitarian dashboard immediately with full privileges.</p>
+          <button type="button" class="btn-demo-quick" onclick="loginDemoUser('Emergency Coordinator')">
+            <i class="fa-solid fa-user-shield"></i>
+            <span>Login as Demo Coordinator</span>
+          </button>
+          <div class="demo-cred-hint">
+            <i class="fa-solid fa-key"></i> Demo: <strong>argho@carebridge.org</strong> / <strong>demo123</strong>
+          </div>
+        </div>
+
+        <form class="auth-form" id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" id="login-email" class="form-input" placeholder="argho@carebridge.org" value="argho@carebridge.org" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="login-password" class="form-input" placeholder="Enter password" value="demo123" required autocomplete="current-password">
+              <button type="button" class="password-toggle" onclick="togglePassword('login-password', this)" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="remember-me" checked>
+              <span class="checkbox-custom"></span>
+              <span>Remember me</span>
+            </label>
+            <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn-auth-primary">
+            <span>Sign In to Dashboard</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+
+        <div class="auth-divider">
+          <span>or continue with</span>
+        </div>
+
+        <div class="social-login">
+          <button class="btn-social" type="button" onclick="loginDemoUser('Google SSO User')" aria-label="Sign in with Google">
+            <i class="fa-brands fa-google"></i>
+          </button>
+          <button class="btn-social" type="button" onclick="loginDemoUser('Microsoft SSO User')" aria-label="Sign in with Microsoft">
+            <i class="fa-brands fa-microsoft"></i>
+          </button>
+          <button class="btn-social" type="button" onclick="loginDemoUser('Apple SSO User')" aria-label="Sign in with Apple">
+            <i class="fa-brands fa-apple"></i>
+          </button>
+        </div>
+
+        <p class="auth-footer-text">
+          Don't have an account? <a href="signup.html" class="auth-link">Create Account</a>
+        </p>
+
+        <a href="landing.html" class="back-to-landing">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Back to Landing Page</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      
+      if (!email || !password) return;
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Verifying...</span>';
+      }
+
+      try {
+        if (window.API && window.API.auth) {
+          const res = await window.API.auth.login(email, password);
+          if (res && res.access_token) {
+            setAuthUser({
+              name: res.user.name,
+              email: res.user.email,
+              role: res.user.role,
+              avatar: res.user.avatar,
+              access_token: res.access_token
+            });
+            showToast(`Welcome back, ${res.user.name}! Redirecting...`, 'success');
+            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('API login failed, falling back or checking error:', err);
+        // If it's a specific credential error from API
+        if (err.message && (err.message.includes('Incorrect') || err.message.includes('401'))) {
+          showToast(err.message, 'error');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+          }
+          return;
+        }
+      }
+
+      // Offline / demo fallback
+      setAuthUser({
+        name: email.includes('argho') ? 'Argho Saha' : email.split('@')[0],
+        email: email,
+        role: 'Emergency Coordinator'
+      });
+      showToast('Login successful! Redirecting to dashboard...', 'success');
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 900);
+    });
+  </script>
+</body>
+</html>

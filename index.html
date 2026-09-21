@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareBridge Bangladesh - Humanitarian Aid & Emergency Response Platform</title>
+  <meta name="description" content="Real-time humanitarian crisis management, NGO coordination, and emergency response platform in Bangladesh.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Authentication Guard Script -->
+  <script src="auth.js"></script>
+  <script>
+    // Enforce dashboard route authentication guard
+    if (typeof window.checkDashboardAuth === 'function') {
+      window.checkDashboardAuth();
+    }
+  </script>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- ==================================================================== -->
+    <!-- LEFT SIDEBAR                                                         -->
+    <!-- ==================================================================== -->
+    <aside class="sidebar">
+      
+      <!-- Brand Header -->
+      <div class="brand-wrapper">
+        <svg class="brand-icon-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Heart outline with bridge arches -->
+          <path d="M22 38.5C22 38.5 6 28 6 15.5C6 9.7 10.7 5 16.5 5C19.8 5 21.5 6.7 22 7.5C22.5 6.7 24.2 5 27.5 5C33.3 5 38 9.7 38 15.5C38 28 22 38.5 22 38.5Z" stroke="#EF4444" stroke-width="2.8" fill="#FFF5F5"/>
+          <!-- Bridge Arches & Road in emerald green -->
+          <path d="M12 24C15 20 18 20 22 24C26 20 29 20 32 24" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M10 27H34" stroke="#059669" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M16 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M22 27V24" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M28 27V21.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-title"><span class="care">Care</span><span class="bridge">Bridge</span></span>
+          <span class="brand-country">Bangladesh</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menus -->
+      <nav class="nav-container">
+        
+        <!-- Main Dashboard -->
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item-btn active" data-tab="dashboard">
+              <div class="nav-left">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+              </div>
+            </button>
+          </li>
+        </ul>
+
+        <!-- Operations Section -->
+        <div class="nav-section-title">Operations</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item-btn" data-tab="live-cases">
+              <div class="nav-left">
+                <i class="fa-solid fa-circle-dot"></i>
+                <span>Live Cases</span>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="case-map">
+              <div class="nav-left">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span>Case Map</span>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="ngos-shelters">
+              <div class="nav-left">
+                <i class="fa-solid fa-building-ngo"></i>
+                <span>NGOs & Shelters</span>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="volunteers">
+              <div class="nav-left">
+                <i class="fa-solid fa-users"></i>
+                <span>Volunteers</span>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="reports-analytics">
+              <div class="nav-left">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Reports & Analytics</span>
+              </div>
+            </button>
+          </li>
+        </ul>
+
+        <!-- Intelligence Section -->
+        <div class="nav-section-title">Intelligence</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item-btn" data-tab="ai-insights">
+              <div class="nav-left">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>AI Insights</span>
+              </div>
+              <span class="nav-badge badge-new">New</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="heatmap">
+              <div class="nav-left">
+                <i class="fa-solid fa-fire"></i>
+                <span>Heatmap</span>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="trends">
+              <div class="nav-left">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                <span>Trends</span>
+              </div>
+            </button>
+          </li>
+        </ul>
+
+        <!-- Communication Section -->
+        <div class="nav-section-title">Communication</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item-btn" data-tab="messages">
+              <div class="nav-left">
+                <i class="fa-solid fa-comments"></i>
+                <span>Messages</span>
+              </div>
+              <span class="nav-badge badge-green">8</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="alerts">
+              <div class="nav-left">
+                <i class="fa-solid fa-bell"></i>
+                <span>Alerts</span>
+              </div>
+              <span class="nav-badge badge-red">12</span>
+            </button>
+          </li>
+        </ul>
+
+        <!-- Management Section -->
+        <div class="nav-section-title">Management</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item-btn" data-tab="ngo-verification">
+              <div class="nav-left">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>NGO Verification</span>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="users-roles">
+              <div class="nav-left">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>Users & Roles</span>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" data-tab="settings">
+              <div class="nav-left">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
+              </div>
+            </button>
+          </li>
+        </ul>
+
+      </nav>
+
+      <!-- Sidebar Emergency Action Box -->
+      <div class="sidebar-emergency-card">
+        <div class="emergency-info">
+          <h4>Emergency?</h4>
+          <p>Quick actions for critical situations</p>
+        </div>
+        <button class="btn-emergency-sos" id="btn-emergency-sidebar">
+          <span class="sos-pulse"></span>
+          <i class="fa-solid fa-phone-volume"></i>
+          <span>Report Emergency</span>
+        </button>
+      </div>
+
+      <!-- Logout -->
+      <div class="sidebar-logout">
+        <button class="btn-logout" onclick="handleLogout()">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ==================================================================== -->
+    <!-- MAIN APPLICATION WRAPPER                                             -->
+    <!-- ==================================================================== -->
+    <main class="main-wrapper">
+      
+      <!-- Top Application Header -->
+      <header class="top-header">
+        <div class="header-welcome">
+          <h1 class="welcome-title">Welcome back, <span id="header-user-name">Argho Saha</span></h1>
+          <p class="welcome-subtitle">CareBridge Operations Command • Bangladesh</p>
+        </div>
+
+        <div class="header-actions-group">
+          <!-- Dark / Light Theme Toggle -->
+          <button class="theme-toggle-btn" id="btn-theme-toggle" onclick="toggleTheme()" title="Toggle Command Theme">
+            <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
+          </button>
+
+          <!-- Search Bar -->
+          <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="global-search-input" class="search-input" placeholder="Search cases, NGOs, volunteers..." autocomplete="off">
+            <span class="search-shortcut">⌘K</span>
+          </div>
+
+          <!-- Notification Bell -->
+          <div class="icon-btn-wrapper">
+            <button class="header-icon-btn" id="btn-notifications-bell" title="Alerts & Notifications">
+              <i class="fa-regular fa-bell"></i>
+              <span class="badge-counter">5</span>
+            </button>
+            <button class="header-icon-btn" id="btn-messages-chat" title="Field Messages">
+              <i class="fa-regular fa-comment-dots"></i>
+              <span class="badge-counter" style="background:#059669;">3</span>
+            </button>
+          </div>
+
+          <!-- User Profile -->
+          <div class="user-profile-chip" onclick="switchViewTab('settings')" title="View Account Settings">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Argho Saha" class="user-avatar" id="header-user-avatar">
+            <div class="user-meta">
+              <span class="user-name" id="header-profile-name">Argho Saha</span>
+              <span class="user-role" id="header-profile-role">Coordinator</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Action Buttons Bar -->
+      <div class="action-buttons-bar">
+        <button class="btn-primary-action" id="btn-new-report-header">
+          <i class="fa-solid fa-plus"></i>
+          <span>New Report</span>
+        </button>
+        <button class="btn-secondary-action" id="btn-add-ngo-header">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Add NGO</span>
+        </button>
+        <button class="btn-secondary-action" id="btn-export-report-header">
+          <i class="fa-solid fa-arrow-down-to-bracket"></i>
+          <span>Export Report</span>
+        </button>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: DASHBOARD (MAIN VIEW)                                        -->
+      <!-- ================================================================== -->
+      <div id="view-dashboard" class="view-section active dashboard-content">
+        
+        <!-- 5 Top Stat Cards -->
+        <section class="stats-grid">
+          
+          <!-- Stat 1: Total Cases -->
+          <div class="stat-card" onclick="switchViewTab('live-cases')">
+            <div class="stat-header">
+              <span class="stat-title">Total Cases</span>
+              <div class="stat-icon-wrapper icon-total">
+                <i class="fa-solid fa-camera"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-val-total">12,482</div>
+            <div class="stat-footer">
+              <span class="stat-change change-up-green">
+                <i class="fa-solid fa-arrow-trend-up"></i> 18.4%
+              </span>
+              <div id="spark-total" class="stat-sparkline"></div>
+            </div>
+          </div>
+
+          <!-- Stat 2: High Priority -->
+          <div class="stat-card" onclick="switchViewTab('live-cases')">
+            <div class="stat-header">
+              <span class="stat-title">High Priority</span>
+              <div class="stat-icon-wrapper icon-high">
+                <i class="fa-solid fa-bell"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-val-high">324</div>
+            <div class="stat-footer">
+              <span class="stat-change change-up-red">
+                <i class="fa-solid fa-arrow-trend-up"></i> 24.6%
+              </span>
+              <div id="spark-high" class="stat-sparkline"></div>
+            </div>
+          </div>
+
+          <!-- Stat 3: In Progress -->
+          <div class="stat-card" onclick="switchViewTab('live-cases')">
+            <div class="stat-header">
+              <span class="stat-title">In Progress</span>
+              <div class="stat-icon-wrapper icon-prog">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-val-prog">652</div>
+            <div class="stat-footer">
+              <span class="stat-change change-up-orange">
+                <i class="fa-solid fa-arrow-trend-up"></i> 12.5%
+              </span>
+              <div id="spark-prog" class="stat-sparkline"></div>
+            </div>
+          </div>
+
+          <!-- Stat 4: Resolved -->
+          <div class="stat-card" onclick="switchViewTab('reports-analytics')">
+            <div class="stat-header">
+              <span class="stat-title">Resolved</span>
+              <div class="stat-icon-wrapper icon-res">
+                <i class="fa-solid fa-clipboard-check"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-val-res">11,506</div>
+            <div class="stat-footer">
+              <span class="stat-change change-up-blue">
+                <i class="fa-solid fa-arrow-trend-up"></i> 21.3%
+              </span>
+              <div id="spark-res" class="stat-sparkline"></div>
+            </div>
+          </div>
+
+          <!-- Stat 5: Avg. Response Time -->
+          <div class="stat-card" onclick="switchViewTab('reports-analytics')">
+            <div class="stat-header">
+              <span class="stat-title">Avg. Response Time</span>
+              <div class="stat-icon-wrapper icon-time">
+                <i class="fa-regular fa-clock"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-val-time">18 min</div>
+            <div class="stat-footer">
+              <span class="stat-change change-up-green">
+                <i class="fa-solid fa-arrow-trend-down"></i> 8.2%
+              </span>
+              <span style="font-size:11px; color:#6b7280;">from last month</span>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Middle 3-Column Section: Map (45%), Case Queue (27%), Right Column (28%) -->
+        <section class="middle-grid">
+          
+          <!-- Column 1: Live Cases Map -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Live Cases Map</h3>
+              <div class="dropdown-select-pill">
+                <span>All Cases</span>
+                <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+            </div>
+            <div class="map-card-body">
+              <!-- Leaflet Container -->
+              <div id="dhaka-live-map"></div>
+
+              <!-- Floating Map Legend Overlay -->
+              <div class="map-floating-legend">
+                <label class="legend-checkbox-item">
+                  <input type="checkbox" id="filter-high" checked onchange="toggleMapFilter()">
+                  <span class="legend-dot red"></span>
+                  <span>High Priority</span>
+                </label>
+                <label class="legend-checkbox-item">
+                  <input type="checkbox" id="filter-med" checked onchange="toggleMapFilter()">
+                  <span class="legend-dot orange"></span>
+                  <span>Medium Priority</span>
+                </label>
+                <label class="legend-checkbox-item">
+                  <input type="checkbox" id="filter-low" checked onchange="toggleMapFilter()">
+                  <span class="legend-dot blue"></span>
+                  <span>Low Priority</span>
+                </label>
+                <label class="legend-checkbox-item">
+                  <input type="checkbox" id="filter-resolved" checked onchange="toggleMapFilter()">
+                  <span class="legend-dot green"></span>
+                  <span>Resolved</span>
+                </label>
+                <label class="legend-checkbox-item">
+                  <input type="checkbox" id="filter-shelters" checked onchange="toggleMapFilter()">
+                  <span class="legend-dot purple"></span>
+                  <span>Shelters</span>
+                </label>
+              </div>
+
+              <!-- Map Zoom & Target Controls -->
+              <div class="map-controls-group">
+                <button class="map-control-btn" title="Zoom In" onclick="zoomMap('in')">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+                <button class="map-control-btn" title="Zoom Out" onclick="zoomMap('out')">
+                  <i class="fa-solid fa-minus"></i>
+                </button>
+                <button class="map-control-btn" title="Recenter on Dhaka" onclick="locateDhakaCenter()">
+                  <i class="fa-solid fa-crosshairs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Case Queue -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Case Queue</h3>
+              <a href="javascript:void(0)" class="panel-action-link" onclick="switchViewTab('live-cases')">View All</a>
+            </div>
+            
+            <div class="queue-list-container" id="case-queue-container">
+              <!-- Dynamically Populated by app.js -->
+            </div>
+
+            <a href="javascript:void(0)" class="queue-footer-link" onclick="switchViewTab('live-cases')">
+              <span>View All Cases</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+
+          <!-- Column 3: Live Activity, AI Insights, Trusted Orgs -->
+          <div class="right-column-container">
+            
+            <!-- Live Activity -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <h3 class="panel-title">Live Activity</h3>
+                <a href="javascript:void(0)" class="panel-action-link" onclick="switchViewTab('alerts')">View All</a>
+              </div>
+              <div class="activity-feed-list" id="live-activity-list">
+                <!-- Dynamically Populated -->
+              </div>
+            </div>
+
+            <!-- AI Insights Mini Card -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <h3 class="panel-title">
+                  <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary); font-size:13px;"></i>
+                  AI Insights
+                </h3>
+                <div class="dropdown-select-pill">
+                  <span>This Week</span>
+                  <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i>
+                </div>
+              </div>
+              <div class="ai-insights-box">
+                <div class="ai-stats-row">
+                  <div class="ai-stat-tile">
+                    <span class="ai-stat-label">Most Reported</span>
+                    <div class="ai-stat-val-group">
+                      <div class="ai-stat-number">Elderly <small style="font-size:12px; font-weight:600; color:#059669;">42%</small></div>
+                      <div id="spark-ai" class="ai-stat-spark"></div>
+                    </div>
+                  </div>
+                  <div class="ai-stat-tile">
+                    <span class="ai-stat-label">Avg. Response Time</span>
+                    <div class="ai-stat-val-group">
+                      <div class="ai-stat-number">18 min</div>
+                      <span class="stat-change change-up-green" style="font-size:9.5px;">↓ 8.2%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ai-hotspot-banner">
+                  <div class="hotspot-info">
+                    <h5>Hotspot Area</h5>
+                    <div class="hotspot-place">Mirpur-10, Dhaka</div>
+                    <span class="hotspot-tag">↑ 28% cases</span>
+                  </div>
+                  <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=100&auto=format&fit=crop&q=80" alt="Hotspot" class="hotspot-thumb-img">
+                </div>
+
+                <button class="btn-full-analytics" onclick="switchViewTab('ai-insights')">
+                  <span>View Full Analytics</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Trusted Organizations -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <h3 class="panel-title">Trusted Organizations</h3>
+                <a href="javascript:void(0)" class="panel-action-link" onclick="switchViewTab('ngos-shelters')">View All</a>
+              </div>
+              <div class="orgs-list" id="trusted-orgs-list">
+                <!-- Dynamically Populated -->
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- Bottom Grid: Recent Cases (65%) & Response Time Trend (35%) -->
+        <section class="bottom-grid">
+          
+          <!-- Recent Cases Table Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Recent Cases</h3>
+              <a href="javascript:void(0)" class="panel-action-link" onclick="switchViewTab('live-cases')">View All</a>
+            </div>
+            
+            <div class="table-responsive-wrapper">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Case ID</th>
+                    <th>Category</th>
+                    <th>Location</th>
+                    <th>Priority</th>
+                    <th>Reported</th>
+                    <th>Status</th>
+                    <th>AI Confidence</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-cases-tbody">
+                  <!-- Dynamically populated from CAREBRIDGE_DATA.recentCases -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Response Time Trend Chart Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Response Time Trend</h3>
+              <div class="dropdown-select-pill" onclick="updateChartPeriod('week')">
+                <span>This Week</span>
+                <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+            </div>
+
+            <div class="chart-card-body">
+              <div class="chart-canvas-container">
+                <canvas id="response-time-canvas"></canvas>
+              </div>
+
+              <div class="chart-footer-stats">
+                <div>
+                  <span class="chart-stat-label">Average Response Time</span>
+                  <div class="chart-stat-value">
+                    18 min
+                    <span class="stat-change change-up-green" style="font-size:11px; font-weight:700;">
+                      <i class="fa-solid fa-arrow-trend-down"></i> 8.2% from last week
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: LIVE CASES                                                   -->
+      <!-- ================================================================== -->
+      <div id="view-live-cases" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">🚨 Field Operations & Live Case Queue</h2>
+              <p style="color:#6b7280; font-size:13px;">Real-time feed of humanitarian distress calls received across Dhaka and all divisions.</p>
+            </div>
+            <button class="btn-primary-action" onclick="openModal('modal-new-report')">
+              <i class="fa-solid fa-plus"></i>
+              <span>Register Emergency Case</span>
+            </button>
+          </div>
+
+          <!-- Category Filter Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap;">
+            <div class="category-filter-chips" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="filter-chip-btn active" onclick="filterLiveCasesByCategory('All', this)">All (7)</button>
+              <button class="filter-chip-btn" onclick="filterLiveCasesByCategory('Child', this)"><i class="fa-solid fa-child"></i> Child (2)</button>
+              <button class="filter-chip-btn" onclick="filterLiveCasesByCategory('Elderly', this)"><i class="fa-solid fa-person-cane"></i> Elderly (2)</button>
+              <button class="filter-chip-btn" onclick="filterLiveCasesByCategory('Medical', this)"><i class="fa-solid fa-heart-pulse"></i> Medical (1)</button>
+              <button class="filter-chip-btn" onclick="filterLiveCasesByCategory('Disability', this)"><i class="fa-solid fa-wheelchair"></i> Disability (1)</button>
+              <button class="filter-chip-btn" onclick="filterLiveCasesByCategory('Homeless', this)"><i class="fa-solid fa-house-chimney-crack"></i> Shelter (1)</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="search-container" style="max-width:240px; height:38px;">
+                <i class="fa-solid fa-magnifying-glass search-icon" style="font-size:12px;"></i>
+                <input type="text" id="live-cases-search" class="search-input" placeholder="Filter cases..." oninput="filterLiveCasesSearch(this.value)" style="font-size:12.5px;">
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Case ID</th>
+                  <th>Category</th>
+                  <th>Location</th>
+                  <th>Priority</th>
+                  <th>Reported</th>
+                  <th>Status</th>
+                  <th>AI Confidence</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="full-live-cases-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: CASE MAP                                                     -->
+      <!-- ================================================================== -->
+      <div id="view-case-map" class="view-section dashboard-content">
+        <div class="panel-card" style="height:78vh; display:flex; flex-direction:column;">
+          <div class="panel-header">
+            <h2 style="font-size:18px; font-weight:800;">Dhaka Division Crisis Map Explorer</h2>
+            <div style="display:flex; gap:10px;">
+              <button class="btn-secondary-action" onclick="locateDhakaCenter()">Center Dhaka</button>
+              <button class="btn-primary-action" onclick="openModal('modal-new-report')">+ Pin Incident</button>
+            </div>
+          </div>
+          <div style="flex:1; position:relative; min-height:450px;">
+            <div id="fullscreen-dhaka-map" style="width:100%; height:100%; min-height:500px; background:#e2e8f0; border-radius:0 0 16px 16px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: NGOS & SHELTERS                                              -->
+      <!-- ================================================================== -->
+      <div id="view-ngos-shelters" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">NGO Network & Verified Shelters</h2>
+              <p style="color:#6b7280; font-size:13px;">Collaborating with registered non-governmental organizations across Bangladesh.</p>
+            </div>
+            <button class="btn-primary-action" onclick="openModal('modal-add-ngo')">
+              <i class="fa-solid fa-plus"></i>
+              <span>Register Partner NGO</span>
+            </button>
+          </div>
+
+          <div id="ngos-shelters-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+            <!-- Dynamically populated from CAREBRIDGE_DATA.trustedOrganizations / API -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: VOLUNTEERS                                                   -->
+      <!-- ================================================================== -->
+      <div id="view-volunteers" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">Active Volunteer Units in Dhaka</h2>
+              <p style="color:#6b7280; font-size:13px;">1,420 registered on-ground volunteers ready for automated emergency dispatch.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn-secondary-action" onclick="openModal('modal-add-volunteer')">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add Volunteer</span>
+              </button>
+              <button class="btn-primary-action" onclick="showToast('Dispatch broadcast sent to 24 nearest volunteers!', 'info')">
+                <i class="fa-solid fa-tower-broadcast"></i>
+                <span>Broadcast Field Alert</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="volunteers-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:16px;">
+            <!-- Dynamically populated from API -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: REPORTS & ANALYTICS                                          -->
+      <!-- ================================================================== -->
+      <div id="view-reports-analytics" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">📊 Humanitarian Impact Reports & Operational Analytics</h2>
+              <p style="color:#6b7280; font-size:13px;">Executive performance tracking across all 8 administrative divisions and 64 districts in Bangladesh.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn-secondary-action" onclick="openModal('modal-export-report')">
+                <i class="fa-solid fa-file-csv"></i>
+                <span>Download CSV Audit</span>
+              </button>
+              <button class="btn-primary-action" onclick="openModal('modal-export-report')">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>Generate PDF Executive Report</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Metric Cards -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+            <div class="stat-card" style="padding:18px;">
+              <span class="stat-title">Total Cases Managed</span>
+              <div class="stat-value" style="color:var(--primary); font-size:26px;">12,482</div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#059669; font-weight:700; margin-top:4px;">
+                <i class="fa-solid fa-arrow-trend-up"></i> +18.4% this quarter
+              </div>
+            </div>
+
+            <div class="stat-card" style="padding:18px;">
+              <span class="stat-title">Overall Resolution Rate</span>
+              <div class="stat-value" style="color:#10b981; font-size:26px;">92.1%</div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#6b7280; margin-top:4px;">
+                11,506 cases closed
+              </div>
+            </div>
+
+            <div class="stat-card" style="padding:18px;">
+              <span class="stat-title">Avg. Rapid Arrival</span>
+              <div class="stat-value" style="color:#3b82f6; font-size:26px;">14.2 min</div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#059669; font-weight:700; margin-top:4px;">
+                <i class="fa-solid fa-bolt"></i> -2.1 min faster
+              </div>
+            </div>
+
+            <div class="stat-card" style="padding:18px;">
+              <span class="stat-title">Citizens Reached</span>
+              <div class="stat-value" style="color:#8b5cf6; font-size:26px;">48,920</div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#6b7280; margin-top:4px;">
+                Across 8 Divisions
+              </div>
+            </div>
+          </div>
+
+          <!-- Divisional & Category Breakdown -->
+          <div style="display:grid; grid-template-columns: 3fr 2fr; gap:20px;">
+            <!-- Left: Divisional Performance Table -->
+            <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+              <h3 style="font-size:15px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-map-location-dot" style="color:var(--primary);"></i>
+                Divisional Emergency Response Distribution
+              </h3>
+              <table class="custom-table" style="background:transparent; font-size:12.5px;">
+                <thead>
+                  <tr>
+                    <th>Division</th>
+                    <th>Cases</th>
+                    <th>Resolution</th>
+                    <th>Avg. Dispatch</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Dhaka Division</strong></td>
+                    <td>7,420</td>
+                    <td><span style="color:#059669; font-weight:700;">94.2%</span></td>
+                    <td>12.4 min</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Chittagong Division</strong></td>
+                    <td>2,140</td>
+                    <td><span style="color:#059669; font-weight:700;">91.8%</span></td>
+                    <td>15.1 min</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Sylhet Division</strong></td>
+                    <td>1,210</td>
+                    <td><span style="color:#059669; font-weight:700;">89.4%</span></td>
+                    <td>17.8 min</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rajshahi Division</strong></td>
+                    <td>890</td>
+                    <td><span style="color:#059669; font-weight:700;">93.0%</span></td>
+                    <td>13.6 min</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Khulna & Coastal</strong></td>
+                    <td>822</td>
+                    <td><span style="color:#059669; font-weight:700;">88.5%</span></td>
+                    <td>16.2 min</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Right: Crisis Category Share -->
+            <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <h3 style="font-size:15px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i>
+                  Aid Category Volume Share
+                </h3>
+
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                      <span><i class="fa-solid fa-child" style="color:#059669; margin-right:4px;"></i> Child Welfare & Minor Rescue</span>
+                      <span>34% (4,243)</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden;">
+                      <div style="width:34%; height:100%; background:#059669; border-radius:4px;"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                      <span><i class="fa-solid fa-person-cane" style="color:#f59e0b; margin-right:4px;"></i> Elderly Care & Shelter</span>
+                      <span>26% (3,245)</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden;">
+                      <div style="width:26%; height:100%; background:#f59e0b; border-radius:4px;"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                      <span><i class="fa-solid fa-heart-pulse" style="color:#ef4444; margin-right:4px;"></i> Medical Emergency & Trauma</span>
+                      <span>22% (2,746)</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden;">
+                      <div style="width:22%; height:100%; background:#ef4444; border-radius:4px;"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                      <span><i class="fa-solid fa-wheelchair" style="color:#8b5cf6; margin-right:4px;"></i> Disability Rehabilitation</span>
+                      <span>11% (1,373)</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden;">
+                      <div style="width:11%; height:100%; background:#8b5cf6; border-radius:4px;"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                      <span><i class="fa-solid fa-house-chimney-crack" style="color:#3b82f6; margin-right:4px;"></i> Emergency Shelter & Relocation</span>
+                      <span>7% (875)</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden;">
+                      <div style="width:7%; height:100%; background:#3b82f6; border-radius:4px;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:16px; padding-top:12px; border-top:1px solid #e5e7eb; font-size:11.5px; color:#6b7280;">
+                <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Verified by NGO Affairs Bureau & Ministry of Disaster Management.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: AI INSIGHTS                                                  -->
+      <!-- ================================================================== -->
+      <div id="view-ai-insights" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <h2 style="font-size:20px; font-weight:800; margin-bottom:14px;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary);"></i>
+            CareBridge AI Intelligence Hub
+          </h2>
+          <p style="color:#6b7280; font-size:13.5px; margin-bottom:20px;">
+            Machine learning models analyze distress calls, crowd-sourced reports, and geolocation trends to predict resource shortages and route volunteers dynamically.
+          </p>
+
+          <!-- Dynamic AI Live Stats -->
+          <div id="ai-live-stats" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-bottom:20px;">
+            <!-- Populated dynamically by renderAiInsights() -->
+            <div class="stat-card" style="padding:14px; text-align:center; opacity:0.5;">
+              <div style="font-size:22px; font-weight:900; color:#059669;">--</div>
+              <div style="font-size:11px; color:#6b7280;">Triage Accuracy</div>
+            </div>
+            <div class="stat-card" style="padding:14px; text-align:center; opacity:0.5;">
+              <div style="font-size:22px; font-weight:900; color:#3b82f6;">--</div>
+              <div style="font-size:11px; color:#6b7280;">Avg. Response</div>
+            </div>
+            <div class="stat-card" style="padding:14px; text-align:center; opacity:0.5;">
+              <div style="font-size:22px; font-weight:900; color:#ef4444;">--</div>
+              <div style="font-size:11px; color:#6b7280;">Hotspot Surge</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div style="background:#f9fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb;">
+              <h4 style="font-weight:700; font-size:15px; margin-bottom:10px;">Hotspot Escalation Forecast</h4>
+              <p id="ai-hotspot-desc" style="font-size:12.5px; color:#4b5563; margin-bottom:14px;">Loading forecast...</p>
+              <div id="ai-hotspot-rec" style="background:#fee2e2; color:#991b1b; padding:10px 14px; border-radius:8px; font-weight:700; font-size:12px;">
+                ⚠️ Recommendation: Loading...
+              </div>
+            </div>
+
+            <div style="background:#f9fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb;">
+              <h4 style="font-weight:700; font-size:15px; margin-bottom:10px;">Automated Triage Accuracy</h4>
+              <p id="ai-triage-acc" style="font-size:12.5px; color:#4b5563; margin-bottom:14px;">Loading accuracy...</p>
+              <div id="ai-triage-rec" style="background:#ecfdf5; color:#065f46; padding:10px 14px; border-radius:8px; font-weight:700; font-size:12px;">
+                ✅ Loading improvements...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: HEATMAP                                                      -->
+      <!-- ================================================================== -->
+      <div id="view-heatmap" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">🔥 Dhaka Crisis Density Heatmap</h2>
+              <p style="color:#6b7280; font-size:13px;">Real-time incident frequency density across municipal wards and slum clusters.</p>
+            </div>
+            <span id="heatmap-density-badge" style="font-size:12px; font-weight:700; color:#ef4444; background:#fee2e2; padding:6px 12px; border-radius:20px;">
+              ● Loading hotspots...
+            </span>
+          </div>
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+            <div style="background:#111827; border-radius:12px; padding:20px; color:#fff; min-height:300px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
+              <div style="position:absolute; inset:0; background: radial-gradient(circle at 30% 40%, rgba(239, 68, 68, 0.4), transparent 50%), radial-gradient(circle at 60% 60%, rgba(245, 158, 11, 0.3), transparent 60%);"></div>
+              <div style="position:relative; z-index:2;">
+                <h4 id="heatmap-hero-title" style="font-size:16px; font-weight:800;">Loading primary hotspot...</h4>
+                <p id="heatmap-hero-desc" style="font-size:12px; color:#9ca3af; margin-top:4px;">Fetching live crisis data...</p>
+              </div>
+              <div style="position:relative; z-index:2; display:flex; gap:16px;">
+                <div><span id="heatmap-hero-count" style="font-size:22px; font-weight:800; color:#ef4444;">--</span><br><small style="font-size:10.5px; color:#9ca3af;">Active Incidents</small></div>
+                <div><span style="font-size:22px; font-weight:800; color:#10b981;">14 min</span><br><small style="font-size:10.5px; color:#9ca3af;">Avg Dispatch</small></div>
+                <div><span style="font-size:22px; font-weight:800; color:#3b82f6;">6 Units</span><br><small style="font-size:10.5px; color:#9ca3af;">Patrolling</small></div>
+              </div>
+            </div>
+            <div id="heatmap-clusters" style="display:flex; flex-direction:column; gap:12px;">
+              <!-- Dynamically populated from API -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: NGO VERIFICATION                                             -->
+      <!-- ================================================================== -->
+      <div id="view-ngo-verification" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">🛡️ NGO Partner Verification Portal</h2>
+              <p style="color:#6b7280; font-size:13px;">Review official registration credentials and verify non-profit relief providers.</p>
+            </div>
+            <span style="font-size:12px; font-weight:700; color:#059669; background:#e6f7f0; padding:6px 12px; border-radius:20px;">
+              3 Pending Reviews
+            </span>
+          </div>
+
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>NGO Name</th>
+                <th>Affairs Bureau ID</th>
+                <th>Coverage Area</th>
+                <th>Capacity</th>
+                <th>Documents</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="ngo-verification-tbody">
+              <!-- Dynamically populated from API (Pending NGOs) -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: TRENDS & ANALYTICS                                           -->
+      <!-- ================================================================== -->
+      <div id="view-trends" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <h2 style="font-size:20px; font-weight:800; margin-bottom:14px;">📈 Long-Term Crisis Resolution Trends</h2>
+          <p style="color:#6b7280; font-size:13px; margin-bottom:20px;">Year-to-date performance across 64 districts in Bangladesh.</p>
+          
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:16px;">
+            <div class="stat-card">
+              <span class="stat-title">Resolution Rate</span>
+              <div class="stat-value" style="color:#059669;">92.1%</div>
+              <span style="font-size:11px; color:#6b7280;">+3.4% vs 2025</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Avg. On-Scene Arrival</span>
+              <div class="stat-value" style="color:#3b82f6;">14.2 min</div>
+              <span style="font-size:11px; color:#6b7280;">-2.1 min faster</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Lives Impacted</span>
+              <div class="stat-value" style="color:#8b5cf6;">48,920</div>
+              <span style="font-size:11px; color:#6b7280;">Across 8 Divisions</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Donor Efficiency</span>
+              <div class="stat-value" style="color:#f59e0b;">98.6%</div>
+              <span style="font-size:11px; color:#6b7280;">Direct Field Allocation</span>
+            </div>
+          </div>
+
+          <!-- Interactive Charts Container -->
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-top:24px;">
+            <div style="background:#f9fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb; height:320px; display:flex; flex-direction:column;">
+              <h4 style="font-weight:700; font-size:14px; margin-bottom:12px; color:#374151;">Average Response Time (Minutes)</h4>
+              <div style="flex:1; position:relative; width:100%;">
+                <canvas id="chart-response-time"></canvas>
+              </div>
+            </div>
+            <div style="background:#f9fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb; height:320px; display:flex; flex-direction:column;">
+              <h4 style="font-weight:700; font-size:14px; margin-bottom:12px; color:#374151;">Crisis Category Volume</h4>
+              <div style="flex:1; position:relative; width:100%; display:flex; justify-content:center; align-items:center;">
+                <canvas id="chart-category-share"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: MESSAGES                                                     -->
+      <!-- ================================================================== -->
+      <div id="view-messages" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">💬 Field Command Dispatch Messaging</h2>
+              <p style="color:#6b7280; font-size:13px;">Direct encrypted field communications with coordinators, EMTs, and shelter hubs.</p>
+            </div>
+            <button class="btn-primary-action" onclick="showToast('Broadcasted field status ping to all 8 operational divisions', 'info')">
+              <i class="fa-solid fa-tower-broadcast"></i>
+              <span>Broadcast Channel Update</span>
+            </button>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 280px 1fr; gap:20px; height:500px; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+            <!-- Chat Threads List -->
+            <div style="background:#f9fafb; border-right:1px solid #e5e7eb; display:flex; flex-direction:column;">
+              <div style="padding:14px; border-bottom:1px solid #e5e7eb;">
+                <input type="text" class="form-control" placeholder="Search field units..." style="font-size:12px; padding:6px 12px;">
+              </div>
+              <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column;">
+                <div class="chat-thread-item active" style="padding:12px 14px; border-bottom:1px solid #e5e7eb; background:#e6f7f0; cursor:pointer;" onclick="selectChatThread(this, 'Rahim Khan')">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <strong style="font-size:13px; color:#065f46;">Mr. Rahim Khan</strong>
+                    <span style="font-size:10px; color:#059669; font-weight:700;">2m ago</span>
+                  </div>
+                  <p style="font-size:11.5px; color:#4b5563; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Found the child at Mirpur-10...</p>
+                  <span style="font-size:10px; color:#059669;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Volunteer Unit 1</span>
+                </div>
+
+                <div class="chat-thread-item" style="padding:12px 14px; border-bottom:1px solid #e5e7eb; cursor:pointer;" onclick="selectChatThread(this, 'Dr. Farzana Rahman')">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <strong style="font-size:13px;">Dr. Farzana Rahman</strong>
+                    <span style="font-size:10px; color:#6b7280;">14m ago</span>
+                  </div>
+                  <p style="font-size:11.5px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Dehydration IV fluids prepped for elderly...</p>
+                  <span style="font-size:10px; color:#3b82f6;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Medical Triage</span>
+                </div>
+
+                <div class="chat-thread-item" style="padding:12px 14px; border-bottom:1px solid #e5e7eb; cursor:pointer;" onclick="selectChatThread(this, 'Asha Foundation Shelter')">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <strong style="font-size:13px;">Asha Shelter Hub 2</strong>
+                    <span style="font-size:10px; color:#6b7280;">1h ago</span>
+                  </div>
+                  <p style="font-size:11.5px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">4 beds reserved for minor intake...</p>
+                  <span style="font-size:10px; color:#8b5cf6;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> NGO Coordinator</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Chat Conversation -->
+            <div style="display:flex; flex-direction:column; height:100%; background:#ffffff;">
+              <div style="padding:12px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <h4 style="font-size:14px; font-weight:800;" id="inpage-chat-partner">Mr. Rahim Khan (Mirpur Unit)</h4>
+                  <span style="font-size:11px; color:#059669;">● Online & En Route (1.8 km from scene)</span>
+                </div>
+                <button class="btn-secondary-action" style="padding:4px 10px; font-size:11.5px;" onclick="locateDhakaCenter()">
+                  <i class="fa-solid fa-location-crosshairs"></i> Locate
+                </button>
+              </div>
+
+              <!-- Message Stream -->
+              <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px;" id="inpage-chat-stream">
+                <div style="align-self:flex-start; max-width:75%; background:#f3f4f6; padding:10px 14px; border-radius:12px 12px 12px 2px;">
+                  <strong style="font-size:11px; color:#059669;">Rahim Khan:</strong>
+                  <p style="font-size:12.5px; margin-top:3px; color:#111827;">Arrived at Mirpur-10 intersection. Found the child, contacting Asha Shelter team now.</p>
+                  <span style="font-size:10px; color:#9ca3af; display:block; margin-top:4px;">10:42 AM</span>
+                </div>
+
+                <div style="align-self:flex-end; max-width:75%; background:#059669; color:#fff; padding:10px 14px; border-radius:12px 12px 2px 12px;">
+                  <strong style="font-size:11px; color:#d1fae5;">You (Argho Saha):</strong>
+                  <p style="font-size:12.5px; margin-top:3px;">Great job Rahim. Asha Shelter van is 3 minutes away from your location. Stay with the minor.</p>
+                  <span style="font-size:10px; color:#a7f3d0; display:block; margin-top:4px;">10:44 AM</span>
+                </div>
+              </div>
+
+              <!-- Chat Composer -->
+              <div style="padding:12px 16px; border-top:1px solid #e5e7eb; display:flex; gap:10px; background:#f9fafb;">
+                <input type="text" class="form-control" id="inpage-chat-input" placeholder="Type instructions or update to field team..." style="flex:1;" onkeydown="if(event.key==='Enter') sendInpageChatMessage()">
+                <button class="btn-primary-action" onclick="sendInpageChatMessage()">
+                  <i class="fa-solid fa-paper-plane"></i>
+                  <span>Send</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: ALERTS                                                       -->
+      <!-- ================================================================== -->
+      <div id="view-alerts" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">🔔 Real-Time Emergency Alerts & Triage Dispatch Feed</h2>
+              <p style="color:#6b7280; font-size:13px;">High-priority humanitarian alerts broadcasted across Dhaka command network.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn-secondary-action" onclick="showToast('All alerts marked as acknowledged', 'info')">
+                <i class="fa-solid fa-check-double"></i>
+                <span>Mark All Read</span>
+              </button>
+              <button class="btn-emergency-sos" style="width:auto; padding:8px 18px;" onclick="openModal('modal-emergency-sos')">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Trigger High SOS</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;" id="alerts-feed-list">
+            <!-- Alert 1 -->
+            <div style="background:#fff5f5; border:1px solid #fecaca; border-left:4px solid #ef4444; border-radius:10px; padding:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; gap:14px; align-items:center;">
+                <div style="width:40px; height:40px; border-radius:50%; background:#fee2e2; color:#ef4444; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <h4 style="font-size:14px; font-weight:800; color:#991b1b;">🚨 Critical Flood Evacuation Alert - Dhanmondi</h4>
+                    <span style="font-size:10px; font-weight:700; background:#ef4444; color:#fff; padding:2px 8px; border-radius:10px;">HIGH SOS</span>
+                  </div>
+                  <p style="font-size:12px; color:#7f1d1d; margin-top:2px;">12 senior citizens stranded near lakeside ground floor residence due to sudden water level rise.</p>
+                  <span style="font-size:11px; color:#991b1b; opacity:0.8;">Triggered 1 min ago • Coordinated by Civil Defense & BRAC</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary-action" style="padding:6px 14px; font-size:12px;" onclick="showToast('⚡ Rescue team deployed to Dhanmondi Lakeside!', 'success')">Deploy Rescue</button>
+                <button class="btn-secondary-action" style="padding:6px 12px; font-size:12px;" onclick="openCaseDetailsDrawer('CB-12481')">Inspect</button>
+              </div>
+            </div>
+
+            <!-- Alert 2 -->
+            <div style="background:#fffbeb; border:1px solid #fef3c7; border-left:4px solid #f59e0b; border-radius:10px; padding:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; gap:14px; align-items:center;">
+                <div style="width:40px; height:40px; border-radius:50%; background:#fef3c7; color:#f59e0b; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                  <i class="fa-solid fa-child"></i>
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <h4 style="font-size:14px; font-weight:800; color:#92400e;">👶 Unaccompanied Minor - Mirpur-10 Roundabout</h4>
+                    <span style="font-size:10px; font-weight:700; background:#f59e0b; color:#fff; padding:2px 8px; border-radius:10px;">URGENT</span>
+                  </div>
+                  <p style="font-size:12px; color:#78350f; margin-top:2px;">Volunteer Rahim Khan on scene. Safe escort and guardian identification in progress.</p>
+                  <span style="font-size:11px; color:#92400e; opacity:0.8;">Triggered 5 min ago • Case CB-12482</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary-action" style="padding:6px 14px; font-size:12px;" onclick="openCaseDetailsDrawer('CB-12482')">Manage Case</button>
+              </div>
+            </div>
+
+            <!-- Alert 3 -->
+            <div style="background:#f0fdf4; border:1px solid #dcfce7; border-left:4px solid #059669; border-radius:10px; padding:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; gap:14px; align-items:center;">
+                <div style="width:40px; height:40px; border-radius:50%; background:#dcfce7; color:#059669; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                  <i class="fa-solid fa-building-circle-check"></i>
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <h4 style="font-size:14px; font-weight:800; color:#065f46;">🏢 Partner NGO Onboarded - Dhaka Relief Squad</h4>
+                    <span style="font-size:10px; font-weight:700; background:#059669; color:#fff; padding:2px 8px; border-radius:10px;">VERIFIED</span>
+                  </div>
+                  <p style="font-size:12px; color:#047857; margin-top:2px;">Registration verified by NGO Affairs Bureau. 120 volunteer capacity added to north sector.</p>
+                  <span style="font-size:11px; color:#065f46; opacity:0.8;">15 min ago</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-secondary-action" style="padding:6px 12px; font-size:12px;" onclick="switchViewTab('ngos-shelters')">View Profile</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: USERS & ROLES                                                -->
+      <!-- ================================================================== -->
+      <div id="view-users-roles" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="font-size:20px; font-weight:800;">👥 Role Management & Team Access</h2>
+            <button class="btn-primary-action" onclick="showToast('Invite sent to new administrator email', 'success')">+ Invite Team Member</button>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Argho Saha</strong><br><small style="color:#6b7280;">argho@carebridge.org</small></td>
+                <td><span style="background:#e6f7f0; color:#059669; padding:2px 8px; border-radius:4px; font-weight:700;">Super Admin</span></td>
+                <td>Executive HQ Dhaka</td>
+                <td><span style="color:#059669; font-weight:700;">● Active</span></td>
+              </tr>
+              <tr>
+                <td><strong>Dr. Nusrat Jahan</strong><br><small style="color:#6b7280;">nusrat@carebridge.org</small></td>
+                <td><span style="background:#eff6ff; color:#3b82f6; padding:2px 8px; border-radius:4px; font-weight:700;">Medical Dispatch Lead</span></td>
+                <td>Emergency Triage</td>
+                <td><span style="color:#059669; font-weight:700;">● Active</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- VIEW: SETTINGS                                                     -->
+      <!-- ================================================================== -->
+      <div id="view-settings" class="view-section dashboard-content">
+        <div class="panel-card" style="padding:24px; max-width:800px;">
+          <h2 style="font-size:20px; font-weight:800; margin-bottom:20px;">Platform Configuration & Profile</h2>
+          
+          <div style="display:flex; align-items:center; gap:16px; padding:16px; background:#f9fafb; border-radius:12px; margin-bottom:20px;">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" style="width:64px; height:64px; border-radius:50%; object-fit:cover;">
+            <div>
+              <h3 style="font-size:16px; font-weight:700;">Argho Saha</h3>
+              <p style="font-size:12px; color:#6b7280;">Super Administrator • CareBridge HQ Dhaka</p>
+              <span style="font-size:11px; background:#e6f7f0; color:#059669; padding:2px 8px; border-radius:10px; font-weight:700;">Full Access</span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">SMS Alert Gateway (Bangladesh)</label>
+              <input type="text" class="form-control" value="Teletalk / Grameenphone SMS Hub (Active)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Emergency Broadcast Channel</label>
+              <input type="text" class="form-control" value="Civil Defense & Fire Service Hotline (999 Bridge)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">AI Priority Threshold</label>
+              <input type="range" min="50" max="100" value="85" style="accent-color:#059669;">
+              <small style="color:#6b7280;">Escalate to SOS whenever AI confidence exceeds 85%.</small>
+            </div>
+            <button class="btn-primary-action" style="align-self:flex-start;" onclick="showToast('Settings saved successfully!', 'success')">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- MODALS & OVERLAYS                                                      -->
+  <!-- ====================================================================== -->
+
+  <!-- Modal 1: New Case Report -->
+  <div class="modal-backdrop" id="modal-new-report">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-file-circle-plus" style="color:var(--primary);"></i>
+          New Crisis Incident Report
+        </h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-new-report')">&times;</button>
+      </div>
+      <form id="form-new-report">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Incident Category</label>
+            <select class="form-select" id="nr-category" required>
+              <option value="Child">Child Requiring Assistance / Lost Child</option>
+              <option value="Elderly">Elderly Needing Shelter & Health Support</option>
+              <option value="Disability">Person with Disability Assistance</option>
+              <option value="Homeless">Homeless Evacuation & Bed Request</option>
+              <option value="Medical">Medical Emergency / Trauma Care</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Specific Location (Dhaka Area)</label>
+            <input type="text" class="form-control" id="nr-location" placeholder="e.g. Mirpur-10, Dhanmondi 27, Uttara Sector 4" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Urgency Priority</label>
+            <select class="form-select" id="nr-priority">
+              <option value="High">High Priority (Immediate Dispatch)</option>
+              <option value="Medium" selected>Medium Priority (Within 1 hour)</option>
+              <option value="Low">Low Priority (Standard Queue)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Incident Description & Victim Details</label>
+            <textarea class="form-textarea" id="nr-desc" placeholder="Provide details regarding the situation, estimated age, physical condition, and surrounding landmarks..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact / Reporter Phone (Optional)</label>
+            <input type="text" class="form-control" id="nr-contact" placeholder="+880 1712-XXXXXX">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary-action" onclick="closeModal('modal-new-report')">Cancel</button>
+          <button type="submit" class="btn-primary-action">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Submit to CareBridge</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add NGO Partner -->
+  <div class="modal-backdrop" id="modal-add-ngo">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-building-circle-check" style="color:var(--primary);"></i>
+          Onboard NGO Partner
+        </h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-add-ngo')">&times;</button>
+      </div>
+      <form id="form-add-ngo">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Organization Name</label>
+            <input type="text" class="form-control" id="ngo-name" placeholder="e.g. Hope Aid Bangladesh" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">NGO Affairs Bureau Reg ID</label>
+            <input type="text" class="form-control" id="ngo-reg-id" placeholder="e.g. NGOAB-9842" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Primary Operational District</label>
+            <select class="form-select" id="ngo-district">
+              <option value="Dhaka" selected>Dhaka Metropolitan</option>
+              <option value="Chittagong">Chittagong</option>
+              <option value="Sylhet">Sylhet</option>
+              <option value="Rajshahi">Rajshahi</option>
+              <option value="Khulna">Khulna</option>
+              <option value="Barisal">Barisal</option>
+              <option value="Rangpur">Rangpur</option>
+              <option value="Mymensingh">Mymensingh</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Emergency Capacity & Resources</label>
+            <input type="text" class="form-control" id="ngo-capacity" placeholder="e.g. 80 bed capacity, 4 shelters">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary-action" onclick="closeModal('modal-add-ngo')">Cancel</button>
+          <button type="submit" class="btn-primary-action">
+            <i class="fa-solid fa-check"></i>
+            <span>Verify & Register</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Onboard Volunteer -->
+  <div class="modal-backdrop" id="modal-add-volunteer">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-user-plus" style="color:var(--primary);"></i>
+          Register Volunteer
+        </h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-add-volunteer')">&times;</button>
+      </div>
+      <form id="form-add-volunteer">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="vol-name" placeholder="e.g. Nusrat Jahan" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="text" class="form-control" id="vol-phone" placeholder="e.g. +8801700000000" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Primary Location / Area</label>
+            <input type="text" class="form-control" id="vol-location" placeholder="e.g. Dhanmondi, Dhaka" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Skills & Certifications</label>
+            <input type="text" class="form-control" id="vol-skills" placeholder="e.g. First Aid, Child Counseling, EMT">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary-action" onclick="closeModal('modal-add-volunteer')">Cancel</button>
+          <button type="submit" class="btn-primary-action">
+            <i class="fa-solid fa-check"></i>
+            <span>Register & Verify</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Emergency Alert SOS Trigger -->
+  <div class="modal-backdrop emergency-alert-modal" id="modal-emergency-sos">
+    <div class="modal-dialog">
+      <div class="emergency-hero-banner">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:32px; animation:radar-pulse 1.2s infinite;"></i>
+        <h3>REPORT CRITICAL EMERGENCY</h3>
+        <p style="font-size:12.5px; opacity:0.95;">Instantly triggers sirens and dispatches rapid response units.</p>
+      </div>
+      <form id="form-emergency-sos">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Select Emergency Type</label>
+            <div class="sos-category-grid">
+              <div class="sos-type-btn active" data-type="Child in Danger" onclick="selectSosType(this, 'Child')">
+                <i class="fa-solid fa-child-reaching" style="font-size:20px; color:#ef4444;"></i>
+                <span>Child in Danger</span>
+              </div>
+              <div class="sos-type-btn" data-type="Severe Injury / Medical" onclick="selectSosType(this, 'Medical')">
+                <i class="fa-solid fa-truck-medical" style="font-size:20px; color:#ef4444;"></i>
+                <span>Medical Crisis</span>
+              </div>
+              <div class="sos-type-btn" data-type="Flood / Disaster Evac" onclick="selectSosType(this, 'Disaster')">
+                <i class="fa-solid fa-house-flood-water" style="font-size:20px; color:#ef4444;"></i>
+                <span>Flood Evacuation</span>
+              </div>
+              <div class="sos-type-btn" data-type="Elderly Homeless Stranded" onclick="selectSosType(this, 'Elderly')">
+                <i class="fa-solid fa-person-shelter" style="font-size:20px; color:#ef4444;"></i>
+                <span>Immediate Shelter</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Current Emergency Location</label>
+            <input type="text" class="form-control" id="sos-location" value="Mirpur-10, Dhaka" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary-action" onclick="closeModal('modal-emergency-sos')">Cancel</button>
+          <button type="submit" class="btn-emergency-sos" style="width:auto; padding:10px 24px;">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span>BROADCAST INSTANT SOS</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Export Report -->
+  <div class="modal-backdrop" id="modal-export-report">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-download" style="color:var(--primary);"></i>
+          Export Humanitarian Activity Report
+        </h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-export-report')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:#4b5563;">Generate executive summary reports for donors, government agencies, and partner NGOs.</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+            <input type="radio" name="export-type" id="export-type-csv" value="csv" checked style="accent-color:#059669;">
+            <div>
+              <strong>Complete Cases Audit (CSV / Excel)</strong>
+              <div style="font-size:11.5px; color:#6b7280;">Includes live database cases, response time metrics, and NGO breakdowns.</div>
+            </div>
+          </label>
+          <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+            <input type="radio" name="export-type" id="export-type-pdf" value="pdf" style="accent-color:#059669;">
+            <div>
+              <strong>Executive Impact Summary (Printable PDF / Report)</strong>
+              <div style="font-size:11.5px; color:#6b7280;">Visual dashboard summary, official verification header, and KPI table.</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary-action" onclick="closeModal('modal-export-report')">Close</button>
+        <button type="button" class="btn-primary-action" id="btn-do-download-export" onclick="handleExportReportSubmit()">
+          <i class="fa-solid fa-file-arrow-down"></i>
+          <span>Download Export</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Notification List Drawer -->
+  <div class="modal-backdrop" id="modal-notifications-list">
+    <div class="modal-dialog" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-bell" style="color:#ef4444;"></i>
+          System Alerts & Dispatch Feed
+        </h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-notifications-list')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:14px 20px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="padding:10px; border-radius:8px; background:#fff5f5; border-left:3px solid #ef4444;">
+            <div style="font-weight:700; font-size:13px; color:#991b1b;">🚨 Emergency SOS in Dhanmondi</div>
+            <p style="font-size:11.5px; color:#7f1d1d;">Flood evacuation request for 12 elderly residents.</p>
+            <span style="font-size:10px; color:#b91c1c;">1 min ago</span>
+          </div>
+          <div style="padding:10px; border-radius:8px; background:#f0fdf4; border-left:3px solid #059669;">
+            <div style="font-weight:700; font-size:13px; color:#065f46;">🏥 Volunteer Dispatched</div>
+            <p style="font-size:11.5px; color:#047857;">Rahim Khan accepted case CB-12482 at Mirpur-10.</p>
+            <span style="font-size:10px; color:#059669;">5 min ago</span>
+          </div>
+          <div style="padding:10px; border-radius:8px; background:#f9fafb; border-left:3px solid #9ca3af;">
+            <div style="font-weight:700; font-size:13px;">🤝 New NGO Partner Registered</div>
+            <p style="font-size:11.5px; color:#6b7280;">Dhaka Relief Squad submitted registration documents.</p>
+            <span style="font-size:10px; color:#9ca3af;">15 min ago</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary-action" style="width:100%; justify-content:center;" onclick="closeModal('modal-notifications-list'); showToast('All notifications marked as read', 'info');">Mark All as Read</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Team Chat Modal -->
+  <div class="modal-backdrop" id="modal-team-chat">
+    <div class="modal-dialog" style="max-width:500px;">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-comments" style="color:var(--primary);"></i>
+          Field Command Messages
+        </h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-team-chat')">&times;</button>
+      </div>
+      <div class="modal-body" style="height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:12px;">
+        <div style="align-self:flex-start; max-width:80%; background:#f3f4f6; padding:10px 14px; border-radius:12px 12px 12px 2px;">
+          <strong style="font-size:11px; color:#059669;">Rahim Khan (Volunteer):</strong>
+          <p style="font-size:12px; margin-top:2px;">Arrived at Mirpur-10 intersection. Found the child, contacting Asha Shelter team now.</p>
+        </div>
+        <div style="align-self:flex-end; max-width:80%; background:#059669; color:#fff; padding:10px 14px; border-radius:12px 12px 2px 12px;">
+          <strong style="font-size:11px; color:#d1fae5;">You (Argho Saha):</strong>
+          <p style="font-size:12px; margin-top:2px;">Great job Rahim. Shelter van is 3 minutes away from your location.</p>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:10px 16px;">
+        <input type="text" class="form-control" placeholder="Type message to field teams..." style="flex:1;">
+        <button class="btn-primary-action" onclick="showToast('Message sent to field team', 'success')"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide-out Drawer: Case Inspection Details -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeCaseDetailsDrawer()"></div>
+  <aside class="side-drawer" id="case-details-drawer">
+    <div class="drawer-header">
+      <div>
+        <span id="drawer-case-id" style="font-size:12px; font-weight:800; color:var(--primary); background:var(--primary-light); padding:2px 8px; border-radius:4px;">CB-12482</span>
+        <h3 id="drawer-case-title" style="font-size:17px; font-weight:800; margin-top:4px;">Child requiring assistance</h3>
+      </div>
+      <button class="modal-close-btn" onclick="closeCaseDetailsDrawer()">&times;</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Image & Urgency Banner -->
+      <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
+        <img id="drawer-case-img" src="" alt="Victim Case" style="width:100%; height:180px; object-fit:cover;">
+        <div id="drawer-ai-score" style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.75); color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; backdrop-filter:blur(4px);">
+          92% AI Confidence
+        </div>
+      </div>
+
+      <div>
+        <h5 style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase;">Location & Proximity</h5>
+        <div id="drawer-case-location" style="font-size:14px; font-weight:700; color:#111827; margin-top:2px;">Mirpur-10, Dhaka</div>
+      </div>
+
+      <div>
+        <h5 style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase;">Case Description</h5>
+        <p id="drawer-case-desc" style="font-size:12.5px; color:#4b5563; margin-top:4px; line-height:1.6; background:#f9fafb; padding:12px; border-radius:8px; border:1px solid #f3f4f6;">
+          Incident details loading...
+        </p>
+      </div>
+
+      <div>
+        <h5 style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; margin-bottom:8px;">Assigned NGO Partner</h5>
+        <div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid #e5e7eb; border-radius:8px;">
+          <div style="width:32px; height:32px; background:#05966915; color:#059669; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:800;">AF</div>
+          <div>
+            <div style="font-weight:700; font-size:13px;">Asha Foundation</div>
+            <div style="font-size:11px; color:#6b7280;">Rapid Field Unit • Dispatch Active</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:auto; padding-top:16px; border-top:1px solid #e5e7eb;">
+        <button class="btn-primary-action" style="justify-content:center; padding:12px;" onclick="dispatchVolunteerToCase()">
+          <i class="fa-solid fa-person-running"></i>
+          <span>Dispatch Nearest Volunteer Unit</span>
+        </button>
+        <button class="btn-secondary-action" style="justify-content:center; padding:11px; color:#059669; border-color:#059669;" onclick="markCaseResolved()">
+          <i class="fa-solid fa-check"></i>
+          <span>Mark Case Resolved</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ====================================================================== -->
+  <!-- CAREBRIDGE AI COPILOT FLOATING BUTTON & CHAT WINDOW                    -->
+  <!-- ====================================================================== -->
+  <button class="ai-copilot-floating-btn" onclick="toggleCopilot()">
+    <i class="fa-solid fa-wand-magic-sparkles copilot-spark"></i>
+    <span>AI Copilot</span>
+  </button>
+
+  <div class="copilot-window" id="copilot-window">
+    <div class="copilot-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-brain" style="font-size:16px;"></i>
+        <div>
+          <h4 style="font-size:14px; font-weight:800; line-height:1.2;">CareBridge AI Copilot</h4>
+          <span style="font-size:10px; color:#d1fae5;">● Active Crisis Intelligence</span>
+        </div>
+      </div>
+      <button onclick="toggleCopilot()" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer;">&times;</button>
+    </div>
+
+    <div class="copilot-body" id="copilot-chat-body">
+      <div class="copilot-msg-bot">
+        👋 Hello Argho! I am your AI humanitarian dispatch assistant. How can I assist with field triage, volunteer routing, or shelter allocation today?
+      </div>
+      <div class="copilot-quick-prompts">
+        <span class="copilot-prompt-pill" onclick="sendCopilotPrompt('Show highest priority cases')">🚨 High Priority Cases</span>
+        <span class="copilot-prompt-pill" onclick="sendCopilotPrompt('Mirpur child assistance status')">👶 Mirpur Child Status</span>
+        <span class="copilot-prompt-pill" onclick="sendCopilotPrompt('Available shelter beds in Dhaka')">🏥 Shelter Capacity</span>
+      </div>
+    </div>
+
+    <div class="copilot-footer">
+      <input type="text" class="form-control" id="copilot-input" placeholder="Ask AI Copilot about cases, NGOs..." onkeydown="if(event.key==='Enter') handleCopilotSend()">
+      <button class="btn-primary-action" onclick="handleCopilotSend()" style="padding:8px 14px;">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Host -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- CDN Scripts: Leaflet, Chart.js, Canvas Confetti -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- App Data & Scripts -->
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

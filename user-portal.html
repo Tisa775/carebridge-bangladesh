@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareBridge — Citizen Aid Portal</title>
+  <meta name="description" content="Report emergencies, find shelters, track your case, and get help from verified NGOs across Bangladesh.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-light: #10b981;
+      --primary-dark: #047857;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --bg: #f0fdf4;
+      --surface: #ffffff;
+      --border: #d1fae5;
+      --text: #111827;
+      --muted: #6b7280;
+      --radius: 16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    .u-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; height: 64px;
+    }
+    .u-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .u-brand-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 10px; display: grid; place-items: center; }
+    .u-brand-icon i { color: #fff; font-size: 16px; }
+    .u-brand-text { font-size: 17px; font-weight: 800; color: var(--text); }
+    .u-brand-text span { color: var(--primary); }
+    .u-nav-right { display: flex; align-items: center; gap: 12px; }
+    .u-nav-user { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border-radius: 24px; padding: 6px 14px 6px 8px; border: 1px solid var(--border); cursor: pointer; }
+    .u-nav-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+    .u-nav-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-btn-logout { background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+    .u-btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── HERO STRIP ── */
+    .u-hero {
+      background: linear-gradient(135deg, #064e3b 0%, #059669 60%, #10b981 100%);
+      padding: 40px 32px 36px;
+      position: relative; overflow: hidden;
+    }
+    .u-hero::before {
+      content: ''; position: absolute; right: -60px; top: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+    .u-hero::after {
+      content: ''; position: absolute; left: 40%; bottom: -80px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .u-hero-inner { max-width: 960px; margin: 0 auto; position: relative; z-index: 2; }
+    .u-hero-greeting { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 6px; letter-spacing: 0.5px; }
+    .u-hero-title { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .u-hero-sub { font-size: 14px; color: rgba(255,255,255,0.75); max-width: 480px; line-height: 1.6; }
+    .u-hero-sos {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-top: 20px;
+      background: #ef4444; color: #fff;
+      border: none; border-radius: 12px; padding: 12px 24px;
+      font-size: 15px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(239,68,68,0.4);
+      animation: sos-pulse 2s ease-in-out infinite;
+      transition: transform 0.2s;
+    }
+    .u-hero-sos:hover { transform: scale(1.04); }
+    @keyframes sos-pulse {
+      0%, 100% { box-shadow: 0 8px 24px rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 8px 40px rgba(239,68,68,0.7); }
+    }
+
+    /* ── QUICK STAT CARDS ── */
+    .u-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; padding: 24px 32px; max-width: 960px; margin: 0 auto; }
+    .u-stat-card {
+      background: var(--surface); border-radius: var(--radius); padding: 18px;
+      border: 1px solid #e5e7eb; display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .u-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+    .u-stat-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
+    .u-stat-icon i { font-size: 18px; }
+    .u-stat-val { font-size: 22px; font-weight: 900; line-height: 1; }
+    .u-stat-lbl { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+    /* ── MAIN CONTENT ── */
+    .u-main { max-width: 960px; margin: 0 auto; padding: 0 32px 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 700px) { .u-main { grid-template-columns: 1fr; } }
+
+    /* ── PANELS ── */
+    .u-panel {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    .u-panel-full { grid-column: 1 / -1; }
+    .u-panel-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .u-panel-title { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .u-panel-body { padding: 18px 20px; }
+
+    /* ── REPORT FORM ── */
+    .u-form-group { margin-bottom: 14px; }
+    .u-form-label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .u-form-control {
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 1.5px solid #e5e7eb; font-family: inherit; font-size: 13.5px;
+      background: #f9fafb; transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .u-form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); background: #fff; }
+    select.u-form-control { cursor: pointer; }
+    textarea.u-form-control { resize: vertical; min-height: 80px; }
+    .u-btn-submit {
+      width: 100%; padding: 12px; border-radius: 10px;
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #fff; border: none; font-size: 14px; font-weight: 800;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .u-btn-submit:hover { opacity: 0.92; transform: translateY(-1px); }
+    .u-btn-submit:active { transform: translateY(0); }
+
+    /* ── MY CASES LIST ── */
+    .u-case-item {
+      padding: 12px 0; border-bottom: 1px solid #f3f4f6;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .u-case-item:last-child { border-bottom: none; }
+    .u-case-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .u-case-title { font-size: 13px; font-weight: 700; }
+    .u-case-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+    .u-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 700; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-progress { background: #dbeafe; color: #1e40af; }
+    .badge-resolved { background: #d1fae5; color: #065f46; }
+
+    /* ── NGO FINDER CARDS ── */
+    .u-ngo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .u-ngo-card {
+      background: #f9fafb; border-radius: 10px; padding: 12px;
+      border: 1px solid #e5e7eb; display: flex; align-items: center; gap: 10px;
+      transition: border-color 0.2s, background 0.2s; cursor: default;
+    }
+    .u-ngo-card:hover { border-color: var(--primary); background: #f0fdf4; }
+    .u-ngo-logo { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; font-size: 12px; font-weight: 900; color: #fff; flex-shrink: 0; }
+    .u-ngo-name { font-size: 12px; font-weight: 700; }
+    .u-ngo-area { font-size: 11px; color: var(--muted); }
+    .u-ngo-rating { font-size: 11px; color: var(--warning); font-weight: 700; }
+
+    /* ── MAP ── */
+    #u-map { height: 280px; border-radius: 12px; overflow: hidden; }
+
+    /* ── ALERT FEED ── */
+    .u-alert-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .u-alert-item:last-child { border-bottom: none; }
+    .u-alert-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; font-size: 13px; }
+    .u-alert-text { font-size: 12.5px; font-weight: 600; }
+    .u-alert-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── EMPTY STATE ── */
+    .u-empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+    .u-empty i { font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px; }
+    .u-empty p { font-size: 13px; }
+
+    /* ── SOS MODAL ── */
+    .u-modal-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .u-modal-backdrop.active { display: flex; }
+    .u-modal {
+      background: #fff; border-radius: 20px; width: 100%; max-width: 440px;
+      padding: 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+      animation: modal-in 0.25s ease;
+    }
+    @keyframes modal-in { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .u-modal-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .u-modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+    .u-modal-close { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); line-height: 1; }
+
+    /* ── TOAST ── */
+    #u-toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
+    .u-toast {
+      background: #111827; color: #fff; padding: 12px 18px; border-radius: 12px;
+      font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3); opacity: 0; transform: translateY(10px);
+      transition: all 0.3s; max-width: 320px;
+    }
+    .u-toast.show { opacity: 1; transform: translateY(0); }
+    .u-toast.u-toast-success { border-left: 4px solid #10b981; }
+    .u-toast.u-toast-error { border-left: 4px solid #ef4444; }
+    .u-toast.u-toast-info { border-left: 4px solid #3b82f6; }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ── -->
+  <nav class="u-nav">
+    <a href="landing.html" class="u-brand">
+      <div class="u-brand-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div class="u-brand-text"><span>Care</span>Bridge <span style="font-weight:400; font-size:12px; color:#6b7280;">Citizen Portal</span></div>
+    </a>
+    <div class="u-nav-right">
+      <div class="u-nav-user" id="u-nav-user-info">
+        <img id="u-nav-avatar" class="u-nav-avatar" src="https://api.dicebear.com/7.x/initials/svg?seed=User&backgroundColor=e2e8f0" alt="User">
+        <span class="u-nav-name" id="u-nav-name">Loading...</span>
+      </div>
+      <button class="u-btn-logout" onclick="logoutToLanding()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <div class="u-hero">
+    <div class="u-hero-inner">
+      <div class="u-hero-greeting" id="u-greeting">Good evening, Citizen</div>
+      <div class="u-hero-title">Need Help? We're Here for You 🤝</div>
+      <div class="u-hero-sub">Report emergencies, find nearest shelters, and connect with verified NGOs across Bangladesh — all in one place.</div>
+      <button class="u-hero-sos" onclick="openSOS()">
+        <i class="fa-solid fa-siren-on"></i>
+        EMERGENCY SOS — GET HELP NOW
+      </button>
+    </div>
+  </div>
+
+  <!-- ── QUICK STATS ── -->
+  <div class="u-stats">
+    <div class="u-stat-card">
+      <div class="u-stat-icon" style="background:#d1fae5;"><i class="fa-solid fa-shield-heart" style="color:#059669;"></i></div>
+      <div>
+        <div class="u-stat-val" style="color:#059669;" id="u-stat-ngos">--</div>
+        <div class="u-stat-lbl">Active NGOs Near You</div>
+      </div>
+    </div>
+    <div class="u-stat-card">
+      <div class="u-stat-icon" style="background:#dbeafe;"><i class="fa-solid fa-people-group" style="color:#3b82f6;"></i></div>
+      <div>
+        <div class="u-stat-val" style="color:#3b82f6;" id="u-stat-volunteers">--</div>
+        <div class="u-stat-lbl">Field Volunteers On-Duty</div>
+      </div>
+    </div>
+    <div class="u-stat-card">
+      <div class="u-stat-icon" style="background:#fef3c7;"><i class="fa-solid fa-house-chimney-medical" style="color:#f59e0b;"></i></div>
+      <div>
+        <div class="u-stat-val" style="color:#f59e0b;">48</div>
+        <div class="u-stat-lbl">Shelter Beds Available</div>
+      </div>
+    </div>
+    <div class="u-stat-card">
+      <div class="u-stat-icon" style="background:#ede9fe;"><i class="fa-solid fa-check-circle" style="color:#8b5cf6;"></i></div>
+      <div>
+        <div class="u-stat-val" style="color:#8b5cf6;" id="u-stat-resolved">--</div>
+        <div class="u-stat-lbl">Cases Resolved Today</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN GRID ── -->
+  <div class="u-main">
+
+    <!-- REPORT NEW CASE -->
+    <div class="u-panel">
+      <div class="u-panel-header">
+        <div class="u-panel-title"><i class="fa-solid fa-plus-circle" style="color:#059669;"></i> Report a New Case</div>
+      </div>
+      <div class="u-panel-body">
+        <form id="u-report-form">
+          <div class="u-form-group">
+            <label class="u-form-label">Type of Emergency</label>
+            <select class="u-form-control" id="u-case-category" required>
+              <option value="">Select category...</option>
+              <option value="Child">Child in Distress</option>
+              <option value="Elderly">Elderly Assistance</option>
+              <option value="Medical">Medical Emergency</option>
+              <option value="Disability">Disability Support</option>
+              <option value="Homeless">Homeless / Shelter Needed</option>
+              <option value="Flood">Flood / Disaster</option>
+              <option value="Violence">Domestic Violence</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="u-form-group">
+            <label class="u-form-label">Location (Area / Address)</label>
+            <input type="text" class="u-form-control" id="u-case-location" placeholder="e.g. Mirpur-10, Dhaka" required>
+          </div>
+          <div class="u-form-group">
+            <label class="u-form-label">Priority Level</label>
+            <select class="u-form-control" id="u-case-priority" required>
+              <option value="High">High — Immediate danger</option>
+              <option value="Medium" selected>Medium — Needs help soon</option>
+              <option value="Low">Low — General support</option>
+            </select>
+          </div>
+          <div class="u-form-group">
+            <label class="u-form-label">Describe the Situation</label>
+            <textarea class="u-form-control" id="u-case-description" placeholder="Briefly describe what help is needed..."></textarea>
+          </div>
+          <div class="u-form-group">
+            <label class="u-form-label">Your Contact Number</label>
+            <input type="text" class="u-form-control" id="u-case-contact" placeholder="+8801XXXXXXXXX">
+          </div>
+          <button type="submit" class="u-btn-submit">
+            <i class="fa-solid fa-paper-plane"></i>
+            Submit Emergency Report
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MY SUBMITTED CASES -->
+    <div class="u-panel">
+      <div class="u-panel-header">
+        <div class="u-panel-title"><i class="fa-solid fa-folder-open" style="color:#6366f1;"></i> My Submitted Cases</div>
+        <span id="u-cases-count" style="font-size:11px; color:#6b7280; font-weight:600;">Loading...</span>
+      </div>
+      <div class="u-panel-body" id="u-my-cases-list">
+        <div class="u-empty">
+          <i class="fa-solid fa-inbox"></i>
+          <p>No cases submitted yet.<br>Use the form to report an emergency.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHELTER & NGO MAP -->
+    <div class="u-panel u-panel-full">
+      <div class="u-panel-header">
+        <div class="u-panel-title"><i class="fa-solid fa-map-location-dot" style="color:#ef4444;"></i> Live Aid Map — Shelters &amp; Active Zones</div>
+        <span style="font-size:11px; background:#fee2e2; color:#991b1b; padding:4px 10px; border-radius:20px; font-weight:700;">🔴 LIVE</span>
+      </div>
+      <div class="u-panel-body" style="padding:12px;">
+        <div id="u-map"></div>
+      </div>
+    </div>
+
+    <!-- FIND NGOS / SHELTERS -->
+    <div class="u-panel">
+      <div class="u-panel-header">
+        <div class="u-panel-title"><i class="fa-solid fa-building-circle-check" style="color:#059669;"></i> Find NGOs &amp; Shelters</div>
+      </div>
+      <div class="u-panel-body">
+        <input type="text" class="u-form-control" id="u-ngo-search" placeholder="Search by name or area..." oninput="filterNGOs(this.value)" style="margin-bottom:14px;">
+        <div class="u-ngo-grid" id="u-ngo-grid">
+          <!-- Populated from API -->
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE ALERTS FEED -->
+    <div class="u-panel">
+      <div class="u-panel-header">
+        <div class="u-panel-title"><i class="fa-solid fa-bell" style="color:#f59e0b;"></i> Community Alerts</div>
+      </div>
+      <div class="u-panel-body" id="u-alerts-feed">
+        <!-- Populated from API -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── SOS MODAL ── -->
+  <div class="u-modal-backdrop" id="u-sos-modal">
+    <div class="u-modal" style="position:relative;">
+      <button class="u-modal-close" onclick="closeSOS()">&times;</button>
+      <div style="text-align:center; margin-bottom:16px;">
+        <div style="width:56px; height:56px; background:#fee2e2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+          <i class="fa-solid fa-siren-on" style="color:#ef4444; font-size:24px;"></i>
+        </div>
+        <div class="u-modal-title" style="color:#ef4444;">Emergency SOS</div>
+        <div class="u-modal-sub">Fill in quick details below. A field volunteer will be dispatched within minutes.</div>
+      </div>
+      <form id="u-sos-form">
+        <div class="u-form-group">
+          <label class="u-form-label">Your Name</label>
+          <input type="text" class="u-form-control" id="sos-name" placeholder="Full name" required>
+        </div>
+        <div class="u-form-group">
+          <label class="u-form-label">Your Location</label>
+          <input type="text" class="u-form-control" id="sos-location" placeholder="e.g. Mirpur-10 road, near mosque" required>
+        </div>
+        <div class="u-form-group">
+          <label class="u-form-label">Phone Number</label>
+          <input type="text" class="u-form-control" id="sos-phone" placeholder="+8801XXXXXXXXX">
+        </div>
+        <div class="u-form-group">
+          <label class="u-form-label">Describe the Emergency</label>
+          <textarea class="u-form-control" id="sos-desc" placeholder="I need help because..." required></textarea>
+        </div>
+        <button type="submit" class="u-btn-submit" style="background:linear-gradient(135deg,#ef4444,#b91c1c); box-shadow:0 4px 16px rgba(239,68,68,0.35);">
+          <i class="fa-solid fa-siren-on"></i>
+          SEND SOS — DISPATCH HELP NOW
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── TOAST CONTAINER ── -->
+  <div id="u-toast-container"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // ── Retrieve user session ──
+    const SESSION_KEY = 'carebridge_auth';
+    let currentUser = null;
+    let allNGOs = [];
+
+    function getSession() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        return d && d.isLoggedIn ? d : null;
+      } catch { return null; }
+    }
+
+    function showUToast(msg, type = 'success') {
+      const c = document.getElementById('u-toast-container');
+      const t = document.createElement('div');
+      const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
+      t.className = `u-toast u-toast-${type}`;
+      t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(() => t.classList.add('show'), 50);
+      setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
+    }
+
+    // ── Greeting ──
+    function setGreeting(name) {
+      const hour = new Date().getHours();
+      const time = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('u-greeting').textContent = `${time}, ${name}`;
+    }
+
+    // ── Init ──
+    function initPortal() {
+      currentUser = getSession();
+      const nameEl = document.getElementById('u-nav-name');
+      const avatarEl = document.getElementById('u-nav-avatar');
+
+      if (currentUser) {
+        const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'Citizen';
+        nameEl.textContent = firstName;
+        if (currentUser.avatar) avatarEl.src = currentUser.avatar;
+        else {
+          const seed = encodeURIComponent(currentUser.name || 'User');
+          avatarEl.src = `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=e2e8f0&textColor=475569`;
+        }
+        setGreeting(firstName);
+      } else {
+        nameEl.textContent = 'Guest';
+        setGreeting('Citizen');
+      }
+
+      loadStats();
+      loadNGOs();
+      loadAlerts();
+      loadMyCases();
+      initMap();
+    }
+
+    // ── Logout ──
+    function logoutToLanding() {
+      localStorage.removeItem(SESSION_KEY);
+      window.location.href = 'landing.html';
+    }
+
+    // ── Load Stats ──
+    async function loadStats() {
+      try {
+        if (!window.API) return;
+        const [stats, vols] = await Promise.all([
+          window.API.cases.stats(),
+          window.API.volunteers.list()
+        ]);
+        if (stats) {
+          document.getElementById('u-stat-resolved').textContent = (stats.resolved || 0).toLocaleString();
+        }
+        if (vols) {
+          const active = vols.filter(v => v.status === 'Active').length;
+          document.getElementById('u-stat-volunteers').textContent = active.toLocaleString();
+        }
+        const ngos = await window.API.ngos.trusted();
+        if (ngos) {
+          document.getElementById('u-stat-ngos').textContent = ngos.length.toLocaleString();
+        }
+      } catch (e) {
+        console.warn('[Portal] Stats load failed:', e);
+      }
+    }
+
+    // ── Load NGOs ──
+    async function loadNGOs() {
+      try {
+        if (!window.API) return;
+        const data = await window.API.ngos.trusted();
+        allNGOs = data || [];
+        renderNGOs(allNGOs);
+      } catch (e) { console.warn('[Portal] NGO load failed:', e); }
+    }
+
+    const NGO_PALETTE = ['#059669','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#ec4899'];
+    function renderNGOs(list) {
+      const grid = document.getElementById('u-ngo-grid');
+      if (!list || list.length === 0) {
+        grid.innerHTML = '<p style="font-size:12px; color:#6b7280; grid-column:1/-1;">No NGOs found.</p>';
+        return;
+      }
+      grid.innerHTML = list.slice(0, 8).map((n, i) => {
+        const color = NGO_PALETTE[i % NGO_PALETTE.length];
+        const initials = (n.initials || n.name.split(' ').map(w => w[0]).join('').slice(0,2)).toUpperCase();
+        return `
+          <div class="u-ngo-card">
+            <div class="u-ngo-logo" style="background:${color};">${initials}</div>
+            <div>
+              <div class="u-ngo-name">${n.name}</div>
+              <div class="u-ngo-area">${n.cases || 'Active'}</div>
+              <div class="u-ngo-rating">★ ${n.rating || '4.7'}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function filterNGOs(query) {
+      const q = query.toLowerCase();
+      const filtered = allNGOs.filter(n => n.name.toLowerCase().includes(q) || (n.cases || '').toLowerCase().includes(q));
+      renderNGOs(filtered);
+    }
+
+    // ── Load Alerts ──
+    async function loadAlerts() {
+      const feed = document.getElementById('u-alerts-feed');
+      try {
+        if (!window.API) return;
+        const alerts = await window.API.alerts.list();
+        if (!alerts || alerts.length === 0) {
+          feed.innerHTML = '<div class="u-empty"><i class="fa-solid fa-bell-slash"></i><p>No alerts at this time.</p></div>';
+          return;
+        }
+        const colors = { High: { bg: '#fee2e2', ic: '#ef4444' }, Medium: { bg: '#fef3c7', ic: '#f59e0b' }, Low: { bg: '#dbeafe', ic: '#3b82f6' } };
+        feed.innerHTML = alerts.slice(0, 6).map(a => {
+          const c = colors[a.severity] || colors.Low;
+          const timeAgo = a.created_at ? timeSince(a.created_at) : 'Recently';
+          return `
+            <div class="u-alert-item">
+              <div class="u-alert-icon" style="background:${c.bg};">
+                <i class="fa-solid fa-triangle-exclamation" style="color:${c.ic};"></i>
+              </div>
+              <div>
+                <div class="u-alert-text">${a.title}</div>
+                <div class="u-alert-time">${a.description ? a.description.slice(0, 60) + '...' : ''} · ${timeAgo}</div>
+              </div>
+            </div>`;
+        }).join('');
+      } catch (e) {
+        feed.innerHTML = '<div class="u-empty"><i class="fa-solid fa-wifi-slash"></i><p>Could not load alerts.</p></div>';
+      }
+    }
+
+    // ── Load My Cases ──
+    function loadMyCases() {
+      const container = document.getElementById('u-my-cases-list');
+      const countEl = document.getElementById('u-cases-count');
+      const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+      countEl.textContent = `${myCases.length} case${myCases.length !== 1 ? 's' : ''}`;
+
+      if (myCases.length === 0) {
+        container.innerHTML = '<div class="u-empty"><i class="fa-solid fa-inbox"></i><p>No cases submitted yet.<br>Use the form to report an emergency.</p></div>';
+        return;
+      }
+
+      const statusBadge = s => s === 'Resolved' ? 'badge-resolved' : s === 'In Progress' ? 'badge-progress' : 'badge-pending';
+      const dotColor = s => s === 'Resolved' ? '#10b981' : s === 'In Progress' ? '#3b82f6' : '#f59e0b';
+
+      container.innerHTML = myCases.slice().reverse().map(c => `
+        <div class="u-case-item">
+          <div class="u-case-dot" style="background:${dotColor(c.status)};"></div>
+          <div style="flex:1;">
+            <div class="u-case-title">${c.category} — ${c.location}</div>
+            <div class="u-case-meta">${c.time} · <span class="u-badge ${statusBadge(c.status)}">${c.status}</span></div>
+            ${c.description ? `<div class="u-case-meta" style="margin-top:3px;">${c.description.slice(0,60)}${c.description.length > 60 ? '...' : ''}</div>` : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    // ── Submit New Report ──
+    document.getElementById('u-report-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = this.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+      const payload = {
+        category: document.getElementById('u-case-category').value,
+        location: document.getElementById('u-case-location').value,
+        priority: document.getElementById('u-case-priority').value,
+        description: document.getElementById('u-case-description').value,
+        contact: document.getElementById('u-case-contact').value,
+        reporter: currentUser ? currentUser.name : 'Citizen',
+        status: 'Pending',
+      };
+
+      try {
+        if (window.API) await window.API.cases.create(payload);
+      } catch (err) {
+        console.warn('[Portal] Report submit fallback:', err);
+      }
+
+      // Save locally
+      const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+      myCases.push({ ...payload, time: 'Just now', id: Date.now() });
+      localStorage.setItem('u_my_cases', JSON.stringify(myCases));
+
+      this.reset();
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Emergency Report';
+      loadMyCases();
+      showUToast('✅ Emergency report submitted! A field team will contact you shortly.', 'success');
+    });
+
+    // ── SOS Modal ──
+    function openSOS() { document.getElementById('u-sos-modal').classList.add('active'); }
+    function closeSOS() { document.getElementById('u-sos-modal').classList.remove('active'); }
+
+    document.getElementById('u-sos-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = this.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dispatching...';
+
+      const payload = {
+        category: 'Emergency SOS',
+        location: document.getElementById('sos-location').value,
+        priority: 'High',
+        description: document.getElementById('sos-desc').value,
+        contact: document.getElementById('sos-phone').value,
+        reporter: document.getElementById('sos-name').value,
+        status: 'Pending',
+      };
+
+      try {
+        if (window.API) await window.API.cases.create(payload);
+      } catch (err) { console.warn('[Portal] SOS fallback:', err); }
+
+      // Save locally
+      const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+      myCases.push({ ...payload, time: 'Just now', id: Date.now() });
+      localStorage.setItem('u_my_cases', JSON.stringify(myCases));
+
+      this.reset();
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-siren-on"></i> SEND SOS — DISPATCH HELP NOW';
+      closeSOS();
+      loadMyCases();
+      showUToast('🚨 SOS sent! A volunteer will reach you within 15 minutes.', 'success');
+    });
+
+    // ── Map ──
+    function initMap() {
+      const map = L.map('u-map', { zoomControl: true }).setView([23.7808, 90.3807], 11);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 18,
+      }).addTo(map);
+
+      const shelters = [
+        { name: 'Asha Shelter — Mirpur', lat: 23.8150, lng: 90.3600, type: 'shelter' },
+        { name: 'BRAC Aid Hub — Uttara', lat: 23.8650, lng: 90.3950, type: 'shelter' },
+        { name: 'Dhanmondi Medical Relief', lat: 23.7465, lng: 90.3760, type: 'medical' },
+        { name: 'Mirpur-10 Crisis Hotspot', lat: 23.8067, lng: 90.3687, type: 'hotspot' },
+        { name: 'Middle Badda Relief Centre', lat: 23.7806, lng: 90.4267, type: 'hotspot' },
+      ];
+
+      const icons = {
+        shelter: L.divIcon({ className: '', html: '<div style="background:#059669;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>', iconSize: [14,14] }),
+        medical: L.divIcon({ className: '', html: '<div style="background:#3b82f6;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>', iconSize: [14,14] }),
+        hotspot: L.divIcon({ className: '', html: '<div style="background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>', iconSize: [14,14] }),
+      };
+
+      shelters.forEach(s => {
+        L.marker([s.lat, s.lng], { icon: icons[s.type] })
+          .addTo(map)
+          .bindPopup(`<strong>${s.name}</strong><br><small>${s.type === 'hotspot' ? '🔴 Crisis Hotspot' : s.type === 'shelter' ? '🟢 Shelter Available' : '🔵 Medical Centre'}</small>`);
+      });
+
+      // Legend
+      const legend = L.control({ position: 'bottomright' });
+      legend.onAdd = () => {
+        const div = L.DomUtil.create('div');
+        div.style.cssText = 'background:rgba(255,255,255,0.95);padding:8px 12px;border-radius:8px;font-size:11px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,0.12);';
+        div.innerHTML = `
+          <div style="font-weight:700;margin-bottom:4px;">Map Legend</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="width:10px;height:10px;border-radius:50%;background:#059669;display:inline-block;"></span>Shelter</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>Medical</div>
+          <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span>Hotspot</div>`;
+        return div;
+      };
+      legend.addTo(map);
+    }
+
+    // ── Utility ──
+    function timeSince(dateStr) {
+      const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+      if (diff < 1) return 'Just now';
+      if (diff < 60) return `${diff}m ago`;
+      const h = Math.floor(diff / 60);
+      if (h < 24) return `${h}h ago`;
+      return `${Math.floor(h / 24)}d ago`;
+    }
+
+    // ── Boot ──
+    initPortal();
+  </script>
+</body>
+</html>
