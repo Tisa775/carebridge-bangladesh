@@ -210,6 +210,10 @@ const CAREBRIDGE_API = (() => {
     async conversation(partnerId) {
       return await apiGet(`/api/messages/thread/${partnerId}`) || [];
     },
+    // Alias used by communication hub
+    async thread(partnerId) {
+      return await apiGet(`/api/messages/thread/${partnerId}`) || [];
+    },
     async send(receiverId, content) {
       return await apiPost('/api/messages/send', { receiver_id: receiverId, content });
     },

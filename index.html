@@ -1071,93 +1071,168 @@
       <!-- VIEW: MESSAGES                                                     -->
       <!-- ================================================================== -->
       <div id="view-messages" class="view-section dashboard-content">
-        <div class="panel-card" style="padding:24px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-            <div>
-              <h2 style="font-size:20px; font-weight:800;">💬 Field Command Dispatch Messaging</h2>
-              <p style="color:#6b7280; font-size:13px;">Direct encrypted field communications with coordinators, EMTs, and shelter hubs.</p>
-            </div>
-            <button class="btn-primary-action" onclick="showToast('Broadcasted field status ping to all 8 operational divisions', 'info')">
+        <style>
+          .comm-hub { display:grid; grid-template-columns:300px 1fr; height:calc(100vh - 140px); min-height:560px; border-radius:16px; overflow:hidden; border:1px solid #e5e7eb; box-shadow:0 4px 24px rgba(0,0,0,0.06); }
+          .comm-sidebar { background:#f9fafb; border-right:1px solid #e5e7eb; display:flex; flex-direction:column; }
+          .comm-sidebar-header { padding:16px; border-bottom:1px solid #e5e7eb; display:flex; flex-direction:column; gap:10px; }
+          .comm-sidebar-title { font-size:14px; font-weight:800; color:#111827; display:flex; align-items:center; gap:8px; }
+          .comm-search { width:100%; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:12px; background:#fff; outline:none; }
+          .comm-search:focus { border-color:#059669; box-shadow:0 0 0 3px rgba(5,150,105,0.1); }
+          .comm-threads { flex:1; overflow-y:auto; }
+          .comm-thread-item { padding:12px 14px; border-bottom:1px solid #f3f4f6; cursor:pointer; transition:background 0.15s; display:flex; align-items:center; gap:10px; }
+          .comm-thread-item:hover { background:#f0fdf4; }
+          .comm-thread-item.active { background:#e6f7f0; border-left:3px solid #059669; }
+          .comm-thread-avatar { width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0; background:#e5e7eb; }
+          .comm-thread-avatar-placeholder { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#059669,#047857); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
+          .comm-thread-body { flex:1; min-width:0; }
+          .comm-thread-name { font-size:13px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .comm-thread-preview { font-size:11.5px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+          .comm-thread-meta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+          .comm-thread-time { font-size:10px; color:#9ca3af; }
+          .comm-thread-badge { background:#ef4444; color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:10px; }
+          .comm-new-btn { margin:10px 14px; padding:8px 12px; background:linear-gradient(135deg,#059669,#047857); color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; justify-content:center; transition:opacity 0.2s; }
+          .comm-new-btn:hover { opacity:0.9; }
+          /* Chat Panel */
+          .comm-chat { display:flex; flex-direction:column; background:#fff; }
+          .comm-chat-header { padding:14px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#fff; }
+          .comm-chat-partner-info { display:flex; align-items:center; gap:10px; }
+          .comm-chat-avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; background:#e5e7eb; }
+          .comm-chat-name { font-size:14px; font-weight:800; color:#111827; }
+          .comm-chat-status { font-size:11px; color:#059669; display:flex; align-items:center; gap:5px; }
+          .status-dot { width:7px; height:7px; border-radius:50%; background:#059669; display:inline-block; animation:pulse-dot 2s infinite; }
+          @keyframes pulse-dot { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+          .comm-chat-actions { display:flex; gap:8px; }
+          .comm-action-btn { padding:6px 12px; border-radius:8px; border:1px solid #e5e7eb; background:#f9fafb; font-size:11.5px; font-weight:600; color:#374151; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.15s; }
+          .comm-action-btn:hover { background:#e6f7f0; border-color:#059669; color:#059669; }
+          /* Message Stream */
+          .comm-stream { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px; background:#fafafa; }
+          .comm-bubble-wrap { display:flex; gap:8px; align-items:flex-end; }
+          .comm-bubble-wrap.mine { flex-direction:row-reverse; }
+          .bubble-avatar { width:26px; height:26px; border-radius:50%; object-fit:cover; background:#e5e7eb; flex-shrink:0; }
+          .bubble-avatar-placeholder { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#059669,#047857); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+          .comm-bubble { max-width:72%; padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.5; position:relative; animation:bubbleIn 0.25s ease; }
+          @keyframes bubbleIn { from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
+          .comm-bubble.theirs { background:#fff; border:1px solid #e5e7eb; color:#111827; border-radius:2px 14px 14px 14px; }
+          .comm-bubble.mine { background:linear-gradient(135deg,#059669,#047857); color:#fff; border-radius:14px 14px 2px 14px; }
+          .bubble-sender { font-size:10px; font-weight:700; margin-bottom:3px; }
+          .theirs .bubble-sender { color:#059669; }
+          .mine .bubble-sender { color:#d1fae5; }
+          .bubble-time { font-size:10px; margin-top:4px; opacity:0.7; }
+          /* Composer */
+          .comm-composer { padding:14px 16px; border-top:1px solid #e5e7eb; background:#fff; display:flex; gap:8px; align-items:center; }
+          .comm-emoji-btns { display:flex; gap:4px; }
+          .emoji-btn { padding:5px 8px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer; font-size:14px; transition:background 0.15s; }
+          .emoji-btn:hover { background:#e6f7f0; }
+          .comm-input { flex:1; padding:9px 14px; border:1px solid #e5e7eb; border-radius:10px; font-size:13px; outline:none; transition:border-color 0.2s; }
+          .comm-input:focus { border-color:#059669; box-shadow:0 0 0 3px rgba(5,150,105,0.1); }
+          .comm-send-btn { padding:9px 18px; background:linear-gradient(135deg,#059669,#047857); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; transition:opacity 0.2s; }
+          .comm-send-btn:hover { opacity:0.9; }
+          .comm-empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9ca3af; gap:8px; }
+          .comm-typing { align-self:flex-start; background:#fff; border:1px solid #e5e7eb; padding:10px 14px; border-radius:14px; display:flex; gap:4px; align-items:center; }
+          .typing-dot { width:6px; height:6px; border-radius:50%; background:#9ca3af; animation:typing 1.4s infinite; }
+          .typing-dot:nth-child(2){ animation-delay:0.2s; }
+          .typing-dot:nth-child(3){ animation-delay:0.4s; }
+          @keyframes typing { 0%,60%,100%{ transform:translateY(0); } 30%{ transform:translateY(-5px); } }
+          .comm-no-thread { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9ca3af; background:#fafafa; gap:10px; }
+          .comm-no-thread i { font-size:48px; color:#d1fae5; }
+        </style>
+
+        <!-- Top bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h2 style="font-size:20px; font-weight:800;">💬 Field Command Communication Hub</h2>
+            <p style="color:#6b7280; font-size:13px;">Real-time encrypted messaging with field volunteers, EMTs, and shelter coordinators.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-secondary-action" onclick="broadcastToAll()">
               <i class="fa-solid fa-tower-broadcast"></i>
-              <span>Broadcast Channel Update</span>
+              <span>Broadcast All</span>
             </button>
           </div>
+        </div>
 
-          <div style="display:grid; grid-template-columns: 280px 1fr; gap:20px; height:500px; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
-            <!-- Chat Threads List -->
-            <div style="background:#f9fafb; border-right:1px solid #e5e7eb; display:flex; flex-direction:column;">
-              <div style="padding:14px; border-bottom:1px solid #e5e7eb;">
-                <input type="text" class="form-control" placeholder="Search field units..." style="font-size:12px; padding:6px 12px;">
+        <!-- Communication Hub Grid -->
+        <div class="comm-hub">
+          <!-- Sidebar: Thread List -->
+          <div class="comm-sidebar">
+            <div class="comm-sidebar-header">
+              <div class="comm-sidebar-title">
+                <i class="fa-solid fa-comments" style="color:#059669;"></i>
+                Messages
+                <span id="comm-unread-total" style="background:#ef4444; color:#fff; font-size:9px; padding:2px 7px; border-radius:10px; display:none;">0</span>
               </div>
-              <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column;">
-                <div class="chat-thread-item active" style="padding:12px 14px; border-bottom:1px solid #e5e7eb; background:#e6f7f0; cursor:pointer;" onclick="selectChatThread(this, 'Rahim Khan')">
-                  <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <strong style="font-size:13px; color:#065f46;">Mr. Rahim Khan</strong>
-                    <span style="font-size:10px; color:#059669; font-weight:700;">2m ago</span>
-                  </div>
-                  <p style="font-size:11.5px; color:#4b5563; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Found the child at Mirpur-10...</p>
-                  <span style="font-size:10px; color:#059669;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Volunteer Unit 1</span>
-                </div>
-
-                <div class="chat-thread-item" style="padding:12px 14px; border-bottom:1px solid #e5e7eb; cursor:pointer;" onclick="selectChatThread(this, 'Dr. Farzana Rahman')">
-                  <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <strong style="font-size:13px;">Dr. Farzana Rahman</strong>
-                    <span style="font-size:10px; color:#6b7280;">14m ago</span>
-                  </div>
-                  <p style="font-size:11.5px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Dehydration IV fluids prepped for elderly...</p>
-                  <span style="font-size:10px; color:#3b82f6;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Medical Triage</span>
-                </div>
-
-                <div class="chat-thread-item" style="padding:12px 14px; border-bottom:1px solid #e5e7eb; cursor:pointer;" onclick="selectChatThread(this, 'Asha Foundation Shelter')">
-                  <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <strong style="font-size:13px;">Asha Shelter Hub 2</strong>
-                    <span style="font-size:10px; color:#6b7280;">1h ago</span>
-                  </div>
-                  <p style="font-size:11.5px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">4 beds reserved for minor intake...</p>
-                  <span style="font-size:10px; color:#8b5cf6;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> NGO Coordinator</span>
-                </div>
+              <input type="text" class="comm-search" id="comm-search-input" placeholder="🔍 Search contacts..." oninput="filterChatThreads(this.value)">
+            </div>
+            <button class="comm-new-btn" onclick="openNewChatModal()">
+              <i class="fa-solid fa-plus"></i> New Conversation
+            </button>
+            <div class="comm-threads" id="comm-threads-list">
+              <div class="comm-empty-state" style="padding:40px 20px; text-align:center;">
+                <i class="fa-solid fa-comments" style="font-size:32px; color:#d1fae5; margin-bottom:8px;"></i>
+                <p style="font-size:12px;">Loading conversations...</p>
               </div>
             </div>
+          </div>
 
-            <!-- Active Chat Conversation -->
-            <div style="display:flex; flex-direction:column; height:100%; background:#ffffff;">
-              <div style="padding:12px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                  <h4 style="font-size:14px; font-weight:800;" id="inpage-chat-partner">Mr. Rahim Khan (Mirpur Unit)</h4>
-                  <span style="font-size:11px; color:#059669;">● Online & En Route (1.8 km from scene)</span>
+          <!-- Main: Chat Panel -->
+          <div class="comm-chat" id="comm-chat-panel">
+            <div class="comm-no-thread" id="comm-no-thread-placeholder">
+              <i class="fa-regular fa-comment-dots"></i>
+              <p style="font-size:14px; font-weight:600; color:#374151;">Select a conversation</p>
+              <p style="font-size:12px;">Choose a field contact to start chatting</p>
+            </div>
+            <!-- Active Chat (hidden until thread selected) -->
+            <div id="comm-active-chat" style="display:none; flex-direction:column; height:100%;">
+              <div class="comm-chat-header">
+                <div class="comm-chat-partner-info">
+                  <div id="comm-partner-avatar-wrap"></div>
+                  <div>
+                    <div class="comm-chat-name" id="comm-partner-name">—</div>
+                    <div class="comm-chat-status"><span class="status-dot"></span> <span id="comm-partner-status">Online · Field Unit</span></div>
+                  </div>
                 </div>
-                <button class="btn-secondary-action" style="padding:4px 10px; font-size:11.5px;" onclick="locateDhakaCenter()">
-                  <i class="fa-solid fa-location-crosshairs"></i> Locate
-                </button>
-              </div>
-
-              <!-- Message Stream -->
-              <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px;" id="inpage-chat-stream">
-                <div style="align-self:flex-start; max-width:75%; background:#f3f4f6; padding:10px 14px; border-radius:12px 12px 12px 2px;">
-                  <strong style="font-size:11px; color:#059669;">Rahim Khan:</strong>
-                  <p style="font-size:12.5px; margin-top:3px; color:#111827;">Arrived at Mirpur-10 intersection. Found the child, contacting Asha Shelter team now.</p>
-                  <span style="font-size:10px; color:#9ca3af; display:block; margin-top:4px;">10:42 AM</span>
-                </div>
-
-                <div style="align-self:flex-end; max-width:75%; background:#059669; color:#fff; padding:10px 14px; border-radius:12px 12px 2px 12px;">
-                  <strong style="font-size:11px; color:#d1fae5;">You (Argho Saha):</strong>
-                  <p style="font-size:12.5px; margin-top:3px;">Great job Rahim. Asha Shelter van is 3 minutes away from your location. Stay with the minor.</p>
-                  <span style="font-size:10px; color:#a7f3d0; display:block; margin-top:4px;">10:44 AM</span>
+                <div class="comm-chat-actions">
+                  <button class="comm-action-btn" onclick="locateDhakaCenter()"><i class="fa-solid fa-location-crosshairs"></i> Locate</button>
+                  <button class="comm-action-btn" onclick="dispatchVolunteerToCase()"><i class="fa-solid fa-truck-fast"></i> Dispatch</button>
+                  <button class="comm-action-btn" style="border-color:#ef4444; color:#ef4444;" onclick="openModal('modal-emergency-sos')"><i class="fa-solid fa-triangle-exclamation"></i> SOS</button>
                 </div>
               </div>
-
-              <!-- Chat Composer -->
-              <div style="padding:12px 16px; border-top:1px solid #e5e7eb; display:flex; gap:10px; background:#f9fafb;">
-                <input type="text" class="form-control" id="inpage-chat-input" placeholder="Type instructions or update to field team..." style="flex:1;" onkeydown="if(event.key==='Enter') sendInpageChatMessage()">
-                <button class="btn-primary-action" onclick="sendInpageChatMessage()">
-                  <i class="fa-solid fa-paper-plane"></i>
-                  <span>Send</span>
+              <div class="comm-stream" id="comm-message-stream"></div>
+              <div class="comm-composer">
+                <div class="comm-emoji-btns">
+                  <button class="emoji-btn" onclick="appendToChat('🚨')" title="Emergency">🚨</button>
+                  <button class="emoji-btn" onclick="appendToChat('✅')" title="Confirmed">✅</button>
+                  <button class="emoji-btn" onclick="appendToChat('🏥')" title="Medical">🏥</button>
+                  <button class="emoji-btn" onclick="appendToChat('📍')" title="Location">📍</button>
+                </div>
+                <input class="comm-input" id="comm-message-input" placeholder="Type field instructions or status update..."
+                  onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendChatMessage(); }">
+                <button class="comm-send-btn" onclick="sendChatMessage()">
+                  <i class="fa-solid fa-paper-plane"></i> Send
                 </button>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- New Chat Modal -->
+        <div id="modal-new-chat" class="modal-backdrop" style="display:none;">
+          <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header">
+              <i class="fa-solid fa-user-plus" style="color:var(--primary);"></i>
+              New Conversation
+              <button class="modal-close-btn" onclick="closeModal('modal-new-chat')">✕</button>
+            </div>
+            <div class="modal-body" style="padding:20px;">
+              <input type="text" class="form-control" id="new-chat-search" placeholder="Search volunteers or coordinators..." oninput="filterNewChatContacts(this.value)" style="margin-bottom:14px;">
+              <div id="new-chat-contacts-list" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+                <p style="color:#9ca3af; font-size:13px; text-align:center; padding:20px;">Loading contacts...</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
 
       <!-- ================================================================== -->
       <!-- VIEW: ALERTS                                                       -->

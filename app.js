@@ -1145,68 +1145,365 @@ window.switchViewTab = function(tabId) {
 /* -------------------------------------------------------------------------- */
 /* IN-PAGE MESSAGING DISPATCH                                                 */
 /* -------------------------------------------------------------------------- */
-window.selectChatThread = function(el, partnerName) {
-  document.querySelectorAll('.chat-thread-item').forEach(item => {
-    item.classList.remove('active');
-    item.style.background = 'transparent';
-  });
-  if (el) {
-    el.classList.add('active');
-    el.style.background = '#e6f7f0';
+/* -------------------------------------------------------------------------- */
+/* COMMUNICATION HUB — DYNAMIC MESSAGING                                      */
+/* -------------------------------------------------------------------------- */
+
+let activeChatPartnerId = null;
+let activeChatPartnerName = '';
+let chatPollInterval = null;
+let allChatContacts = [];
+let allThreads = [];
+
+// ── Load all threads from API ──────────────────────────────────────────────
+async function loadChatThreads() {
+  const container = document.getElementById('comm-threads-list');
+  if (!container) return;
+
+  try {
+    let threads = [];
+    if (window.API && window.API.messages) {
+      try { threads = await window.API.messages.threads(); } catch (e) {}
+    }
+    allThreads = threads;
+
+    // If no real threads yet, seed with demo contacts (volunteers as conversation starters)
+    if (!threads || threads.length === 0) {
+      renderDemoThreads();
+    } else {
+      renderThreadList(threads);
+    }
+    updateUnreadTotal(threads);
+  } catch (e) {
+    renderDemoThreads();
+  }
+}
+
+function renderDemoThreads() {
+  const vols = (window.CAREBRIDGE_DATA && window.CAREBRIDGE_DATA.volunteers) || [];
+  const demoThreads = vols.slice(0, 5).map((v, i) => ({
+    partner_id: v.id,
+    partner_name: v.name,
+    partner_avatar: v.avatar,
+    last_message: v.status === 'In Transit' ? '📍 En route to case location...' : '✅ Standing by at base.',
+    last_time: new Date(Date.now() - (i * 7 + 3) * 60000).toISOString(),
+    unread_count: i === 0 ? 2 : 0,
+    role: v.location,
+  }));
+  allThreads = demoThreads;
+  renderThreadList(demoThreads);
+}
+
+function renderThreadList(threads) {
+  const container = document.getElementById('comm-threads-list');
+  if (!container) return;
+  if (!threads || threads.length === 0) {
+    container.innerHTML = `<div style="padding:30px 16px; text-align:center; color:#9ca3af; font-size:12px;">
+      <i class="fa-regular fa-comment-dots" style="font-size:28px; color:#d1fae5; display:block; margin-bottom:8px;"></i>
+      No conversations yet.<br>Start a new chat with a volunteer.
+    </div>`;
+    return;
+  }
+  container.innerHTML = threads.map(t => {
+    const initials = (t.partner_name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const avatarHtml = t.partner_avatar
+      ? `<img src="${t.partner_avatar}" class="comm-thread-avatar" onerror="this.style.display='none'; this.nextSibling.style.display='flex';" /><div class="comm-thread-avatar-placeholder" style="display:none;">${initials}</div>`
+      : `<div class="comm-thread-avatar-placeholder">${initials}</div>`;
+    const timeAgo = relativeTime(t.last_time || t.last_time_iso);
+    const badgeHtml = t.unread_count > 0 ? `<span class="comm-thread-badge">${t.unread_count}</span>` : '';
+    const isActive = String(t.partner_id) === String(activeChatPartnerId);
+    return `
+      <div class="comm-thread-item${isActive ? ' active' : ''}" onclick="openChatThread(${t.partner_id}, '${escapeHtml(t.partner_name)}', '${escapeHtml(t.partner_avatar || '')}', '${escapeHtml(t.role || 'Field Unit')}')" data-partner="${t.partner_id}" data-name="${escapeHtml(t.partner_name).toLowerCase()}">
+        ${avatarHtml}
+        <div class="comm-thread-body">
+          <div class="comm-thread-name">${escapeHtml(t.partner_name)}</div>
+          <div class="comm-thread-preview">${escapeHtml(t.last_message || '...')}</div>
+        </div>
+        <div class="comm-thread-meta">
+          <span class="comm-thread-time">${timeAgo}</span>
+          ${badgeHtml}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function relativeTime(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const mins = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  } catch { return ''; }
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function updateUnreadTotal(threads) {
+  const badge = document.getElementById('comm-unread-total');
+  if (!badge) return;
+  const total = (threads || []).reduce((acc, t) => acc + (t.unread_count || 0), 0);
+  if (total > 0) {
+    badge.textContent = total;
+    badge.style.display = 'inline';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ── Open a thread and load messages ───────────────────────────────────────
+window.openChatThread = async function(partnerId, partnerName, partnerAvatar, partnerRole) {
+  activeChatPartnerId = partnerId;
+  activeChatPartnerName = partnerName;
+  AudioFx.playPop();
+
+  // Update thread highlight
+  document.querySelectorAll('.comm-thread-item').forEach(el => el.classList.remove('active'));
+  const activeEl = document.querySelector(`.comm-thread-item[data-partner="${partnerId}"]`);
+  if (activeEl) activeEl.classList.add('active');
+
+  // Show chat panel
+  const placeholder = document.getElementById('comm-no-thread-placeholder');
+  const activeChat = document.getElementById('comm-active-chat');
+  if (placeholder) placeholder.style.display = 'none';
+  if (activeChat) { activeChat.style.display = 'flex'; }
+
+  // Set header
+  const nameEl = document.getElementById('comm-partner-name');
+  const statusEl = document.getElementById('comm-partner-status');
+  const avatarWrap = document.getElementById('comm-partner-avatar-wrap');
+  if (nameEl) nameEl.textContent = partnerName;
+  if (statusEl) statusEl.textContent = `Online · ${partnerRole || 'Field Unit'}`;
+
+  if (avatarWrap) {
+    const initials = (partnerName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    avatarWrap.innerHTML = partnerAvatar
+      ? `<img src="${partnerAvatar}" class="comm-chat-avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.outerHTML='<div style=\'width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#059669,#047857);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;\'>${initials}</div>'">`
+      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#059669,#047857);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">${initials}</div>`;
   }
 
-  const partnerHeader = document.getElementById('inpage-chat-partner');
-  if (partnerHeader) {
-    partnerHeader.innerText = `${partnerName} (Field Unit)`;
-  }
-  AudioFx.playPop();
+  // Load messages
+  await fetchAndRenderMessages(partnerId, true);
+
+  // Start polling
+  if (chatPollInterval) clearInterval(chatPollInterval);
+  chatPollInterval = setInterval(() => fetchAndRenderMessages(partnerId, false), 5000);
 };
 
-window.sendInpageChatMessage = async function() {
-  const input = document.getElementById('inpage-chat-input');
-  const stream = document.getElementById('inpage-chat-stream');
-  if (!input || !stream || !input.value.trim()) return;
+async function fetchAndRenderMessages(partnerId, scrollToBottom) {
+  const stream = document.getElementById('comm-message-stream');
+  if (!stream) return;
+
+  let messages = [];
+  try {
+    if (window.API && window.API.messages) {
+      messages = await window.API.messages.thread(partnerId);
+    }
+  } catch (e) {}
+
+  // If no messages exist, show a welcome state
+  if (!messages || messages.length === 0) {
+    if (scrollToBottom) {
+      stream.innerHTML = `
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9ca3af; gap:8px; padding:40px 20px; text-align:center;">
+          <i class="fa-regular fa-comments" style="font-size:36px; color:#d1fae5;"></i>
+          <p style="font-size:13px; font-weight:600; color:#374151;">Start the conversation</p>
+          <p style="font-size:12px;">Send your first message to ${escapeHtml(activeChatPartnerName)}</p>
+        </div>`;
+    }
+    return;
+  }
+
+  const currentUser = (typeof window.getAuthUser === 'function' && window.getAuthUser());
+  const myId = currentUser ? currentUser.id : null;
+  const myName = currentUser ? currentUser.name : 'You';
+
+  const prevScrollHeight = stream.scrollHeight;
+  stream.innerHTML = messages.map(m => {
+    const isMine = myId ? String(m.sender_id) === String(myId) : false;
+    const senderName = isMine ? myName : activeChatPartnerName;
+    const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const initials = (senderName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const avatarHtml = `<div class="${isMine ? '' : 'bubble-avatar-placeholder'}" style="${isMine ? 'width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#059669,#047857);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;' : ''}">${initials}</div>`;
+    return `
+      <div class="comm-bubble-wrap ${isMine ? 'mine' : ''}">
+        ${avatarHtml}
+        <div class="comm-bubble ${isMine ? 'mine' : 'theirs'}">
+          <div class="bubble-sender">${escapeHtml(senderName)}</div>
+          <div>${escapeHtml(m.content)}</div>
+          <div class="bubble-time">${time}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (scrollToBottom || stream.scrollHeight > prevScrollHeight) {
+    stream.scrollTop = stream.scrollHeight;
+  }
+}
+
+// ── Send a message ──────────────────────────────────────────────────────────
+window.sendChatMessage = async function() {
+  const input = document.getElementById('comm-message-input');
+  if (!input || !input.value.trim() || !activeChatPartnerId) return;
 
   const msg = input.value.trim();
   input.value = '';
 
-  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const authUser = (typeof window.getAuthUser === 'function' && window.getAuthUser()) ? window.getAuthUser().name : 'Argho Saha';
+  const currentUser = (typeof window.getAuthUser === 'function' && window.getAuthUser());
+  const myName = currentUser ? currentUser.name : 'You';
+  const stream = document.getElementById('comm-message-stream');
 
-  const userMsg = document.createElement('div');
-  userMsg.style.cssText = 'align-self:flex-end; max-width:75%; background:#059669; color:#fff; padding:10px 14px; border-radius:12px 12px 2px 12px;';
-  userMsg.innerHTML = `
-    <strong style="font-size:11px; color:#d1fae5;">You (${authUser}):</strong>
-    <p style="font-size:12.5px; margin-top:3px;">${msg}</p>
-    <span style="font-size:10px; color:#a7f3d0; display:block; margin-top:4px;">${timeStr}</span>
-  `;
-  stream.appendChild(userMsg);
-  stream.scrollTop = stream.scrollHeight;
+  // Optimistic UI: append my bubble immediately
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const initials = (myName || 'Y').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const bubble = document.createElement('div');
+  bubble.className = 'comm-bubble-wrap mine';
+  bubble.innerHTML = `
+    <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#059669,#047857);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">${initials}</div>
+    <div class="comm-bubble mine">
+      <div class="bubble-sender">${escapeHtml(myName)}</div>
+      <div>${escapeHtml(msg)}</div>
+      <div class="bubble-time">${time}</div>
+    </div>`;
+  if (stream) { stream.appendChild(bubble); stream.scrollTop = stream.scrollHeight; }
   AudioFx.playPop();
 
-  // Send message to backend
+  // Send to API
   try {
     if (window.API && window.API.messages) {
-      await window.API.messages.send(2, msg);
+      await window.API.messages.send(activeChatPartnerId, msg);
     }
   } catch (e) {
-    console.warn('[CareBridge API] Message send fallback:', e);
+    console.warn('[CareBridge] Message send failed:', e);
   }
 
-  // Field Responder Reply
-  setTimeout(() => {
-    const botReply = document.createElement('div');
-    botReply.style.cssText = 'align-self:flex-start; max-width:75%; background:#f3f4f6; padding:10px 14px; border-radius:12px 12px 12px 2px;';
-    botReply.innerHTML = `
-      <strong style="font-size:11px; color:#059669;">Field Unit Responder:</strong>
-      <p style="font-size:12.5px; margin-top:3px; color:#111827;">Roger that Command. Updating triage telemetry and executing instructions.</p>
-      <span style="font-size:10px; color:#9ca3af; display:block; margin-top:4px;">Just now</span>
-    `;
-    stream.appendChild(botReply);
-    stream.scrollTop = stream.scrollHeight;
-    AudioFx.playSuccess();
-  }, 600);
+  // Update thread preview in sidebar
+  const threadEl = document.querySelector(`.comm-thread-item[data-partner="${activeChatPartnerId}"] .comm-thread-preview`);
+  if (threadEl) threadEl.textContent = msg;
 };
+
+// ── Emoji shortcut ─────────────────────────────────────────────────────────
+window.appendToChat = function(emoji) {
+  const input = document.getElementById('comm-message-input');
+  if (input) { input.value += emoji + ' '; input.focus(); }
+};
+
+// ── Search / filter threads ────────────────────────────────────────────────
+window.filterChatThreads = function(query) {
+  const q = (query || '').toLowerCase();
+  document.querySelectorAll('.comm-thread-item').forEach(el => {
+    const name = el.dataset.name || '';
+    el.style.display = name.includes(q) ? '' : 'none';
+  });
+};
+
+// ── Broadcast to all ───────────────────────────────────────────────────────
+window.broadcastToAll = async function() {
+  const msg = prompt('📡 Enter broadcast message to all field units:');
+  if (!msg || !msg.trim()) return;
+  showToast(`📡 Broadcasted to all field units: "${msg.slice(0, 40)}..."`, 'info');
+  // Send to all known contacts
+  if (window.API && window.API.messages) {
+    const contacts = allThreads.slice(0, 5);
+    for (const t of contacts) {
+      try { await window.API.messages.send(t.partner_id, `[BROADCAST] ${msg}`); } catch {}
+    }
+  }
+};
+
+// ── New Chat Modal ─────────────────────────────────────────────────────────
+window.openNewChatModal = async function() {
+  openModal('modal-new-chat');
+  const list = document.getElementById('new-chat-contacts-list');
+  if (!list) return;
+
+  list.innerHTML = `<p style="color:#9ca3af; font-size:13px; text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading contacts...</p>`;
+
+  let volunteers = [];
+  try {
+    if (window.API && window.API.volunteers) volunteers = await window.API.volunteers.list();
+  } catch {}
+
+  if (!volunteers || !volunteers.length) {
+    volunteers = (window.CAREBRIDGE_DATA && window.CAREBRIDGE_DATA.volunteers) || [];
+  }
+
+  allChatContacts = volunteers;
+  renderNewChatContacts(volunteers);
+};
+
+function renderNewChatContacts(contacts) {
+  const list = document.getElementById('new-chat-contacts-list');
+  if (!list) return;
+  if (!contacts || !contacts.length) {
+    list.innerHTML = `<p style="color:#9ca3af; font-size:13px; text-align:center; padding:20px;">No contacts found.</p>`;
+    return;
+  }
+  list.innerHTML = contacts.map(v => {
+    const initials = (v.name || 'V').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const statusColor = v.status === 'Active' ? '#059669' : v.status === 'In Transit' ? '#f59e0b' : '#6b7280';
+    return `
+      <div onclick="startNewChat(${v.id}, '${escapeHtml(v.name)}', '${escapeHtml(v.avatar || '')}', '${escapeHtml(v.location || 'Field Unit')}')"
+        style="display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; cursor:pointer; transition:all 0.15s;"
+        onmouseover="this.style.background='#f0fdf4'; this.style.borderColor='#059669';"
+        onmouseout="this.style.background=''; this.style.borderColor='#e5e7eb';">
+        ${v.avatar ? `<img src="${v.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.outerHTML='<div style=\'width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#059669,#047857);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;\'>${initials}</div>'">` : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#059669,#047857);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">${initials}</div>`}
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:13px; color:#111827;">${escapeHtml(v.name)}</div>
+          <div style="font-size:11px; color:#6b7280;">${escapeHtml(v.location || 'Field Unit')} · ${v.completed_missions || 0} missions</div>
+        </div>
+        <span style="font-size:10px; font-weight:700; color:${statusColor}; background:${statusColor}18; padding:3px 8px; border-radius:8px;">${v.status || 'Active'}</span>
+      </div>`;
+  }).join('');
+}
+
+window.filterNewChatContacts = function(query) {
+  const q = (query || '').toLowerCase();
+  const filtered = allChatContacts.filter(v => (v.name || '').toLowerCase().includes(q) || (v.location || '').toLowerCase().includes(q));
+  renderNewChatContacts(filtered);
+};
+
+window.startNewChat = function(id, name, avatar, role) {
+  closeModal('modal-new-chat');
+  // Add to thread list if not already there
+  const exists = allThreads.find(t => String(t.partner_id) === String(id));
+  if (!exists) {
+    allThreads.unshift({ partner_id: id, partner_name: name, partner_avatar: avatar, last_message: '', last_time: new Date().toISOString(), unread_count: 0, role });
+    renderThreadList(allThreads);
+  }
+  openChatThread(id, name, avatar, role);
+};
+
+// ── API helpers for messages ───────────────────────────────────────────────
+// Extend window.API.messages if not fully present
+if (window.API && !window.API.messages) {
+  window.API.messages = {
+    async threads() { return await fetch(`${window.API._base || 'http://127.0.0.1:8000'}/api/messages/threads`, { headers: window.API._headers ? window.API._headers() : {} }).then(r => r.ok ? r.json() : []); },
+    async thread(id) { return await fetch(`${window.API._base || 'http://127.0.0.1:8000'}/api/messages/thread/${id}`, { headers: window.API._headers ? window.API._headers() : {} }).then(r => r.ok ? r.json() : []); },
+    async send(receiverId, content) { return await fetch(`${window.API._base || 'http://127.0.0.1:8000'}/api/messages/send`, { method:'POST', headers: { 'Content-Type':'application/json', ...(window.API._headers ? window.API._headers() : {}) }, body: JSON.stringify({ receiver_id: receiverId, content }) }).then(r => r.json()); },
+  };
+}
+
+// ── Init on messages tab open ─────────────────────────────────────────────
+const _origSwitchViewTab = window.switchViewTab;
+window.switchViewTab = function(tab) {
+  if (typeof _origSwitchViewTab === 'function') _origSwitchViewTab(tab);
+  if (tab === 'messages') {
+    loadChatThreads();
+  } else {
+    if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+  }
+};
+
+// Legacy compat
+window.selectChatThread = function(el, name) { openChatThread(2, name, '', 'Field Unit'); };
+window.sendInpageChatMessage = window.sendChatMessage;
+
+
 
 /* -------------------------------------------------------------------------- */
 /* MODALS & DRAWERS MANAGEMENT                                                */
