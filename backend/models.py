@@ -52,6 +52,10 @@ class Case(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     photo = Column(String(500), nullable=True)
+    has_video = Column(Boolean, default=False)
+    video_name = Column(String(255), nullable=True)
+    video_size = Column(String(50), nullable=True)
+    video_url = Column(String(500), nullable=True)
 
 
 class NGO(Base):

@@ -18,11 +18,35 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFullLiveCasesTable();
   renderActivityFeed();
   renderTrustedOrganizations();
+  if (typeof renderHeatmap === 'function' && window.CAREBRIDGE_DATA) {
+    renderHeatmap(window.CAREBRIDGE_DATA.mapHotspots);
+  }
   setupInteractions();
   setupModals();
   startLiveFeedSimulator();
   syncBackendData();
+  // Init new feature panels after slight delay (DOM ready)
+  setTimeout(() => {
+    if (typeof window.hmLoadVideoCases === 'function') window.hmLoadVideoCases();
+    if (typeof window.loadNGOApplications === 'function') window.loadNGOApplications();
+    // Update NGO pending badge in sidebar
+    const apps = JSON.parse(localStorage.getItem('ngo_applications') || '[]');
+    const pending = apps.filter(a => a.status === 'Pending').length;
+    if (pending > 0) {
+      const verifyBtn = document.querySelector('[data-tab="ngo-verification"]');
+      if (verifyBtn) {
+        const existing = verifyBtn.querySelector('.nav-badge');
+        if (!existing) {
+          const badge = document.createElement('span');
+          badge.className = 'nav-badge badge-red';
+          badge.textContent = pending;
+          verifyBtn.appendChild(badge);
+        }
+      }
+    }
+  }, 500);
 });
+
 
 /* -------------------------------------------------------------------------- */
 /* USER SESSION SYNC                                                          */
@@ -84,7 +108,7 @@ async function syncBackendData() {
 
     // 1. Sync live cases
     if (casesList && casesList.length > 0) {
-      window.CAREBRIDGE_DATA.recentCases = casesList.map(c => ({
+      const backendCases = casesList.map(c => ({
         id: c.id,
         category: c.category,
         icon: c.icon || 'fa-circle-dot',
@@ -98,8 +122,45 @@ async function syncBackendData() {
         description: c.description,
         reporter: c.reporter,
         contact: c.contact,
-        assignedNGO: c.assigned_ngo
+        assignedNGO: c.assigned_ngo,
+        has_video: c.has_video || false,
+        video_name: c.video_name,
+        video_size: c.video_size,
+        video_url: c.video_url,
+        lat: c.lat,
+        lng: c.lng
       }));
+
+      // Merge any locally submitted citizen cases from u_my_cases
+      try {
+        const localCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+        const missingLocals = localCases.filter(lc => !backendCases.some(bc => String(bc.id) === String(lc.id) || String(bc.id) === String(lc.localId)));
+        const mappedLocals = missingLocals.map(lc => ({
+          id: lc.id || lc.localId,
+          category: lc.category || 'Emergency',
+          icon: lc.category === 'Child' ? 'fa-child' : lc.category === 'Elderly' ? 'fa-person-cane' : lc.category === 'Medical' ? 'fa-heart-pulse' : 'fa-house-chimney-crack',
+          location: lc.location || 'Dhaka',
+          priority: lc.priority || 'High',
+          priorityClass: lc.priority === 'High' ? 'urgency-high' : lc.priority === 'Medium' ? 'urgency-med' : 'urgency-low',
+          reported: lc.submittedAt ? formatRelativeTime(lc.submittedAt) : 'Just now',
+          status: lc.status || 'Pending',
+          statusClass: 'status-pending',
+          confidence: '95%',
+          description: lc.description,
+          reporter: lc.reporter || 'Citizen',
+          contact: lc.contact,
+          assignedNGO: 'Unassigned',
+          has_video: lc.has_video || lc.hasVideo || !!lc.videoName,
+          video_name: lc.video_name || lc.videoName,
+          video_size: lc.video_size || lc.videoSize,
+          video_url: lc.video_url || lc.videoUrl,
+          lat: lc.lat || (lc.coords ? lc.coords[0] : null),
+          lng: lc.lng || (lc.coords ? lc.coords[1] : null)
+        }));
+        window.CAREBRIDGE_DATA.recentCases = [...mappedLocals, ...backendCases];
+      } catch (e) {
+        window.CAREBRIDGE_DATA.recentCases = backendCases;
+      }
     }
 
     // 2. Sync dashboard components (hotspots, queue, activity, trusted orgs)
@@ -656,9 +717,14 @@ function renderRecentCasesTable(filterText = '') {
     return;
   }
 
-  tbody.innerHTML = cases.map(c => `
+  tbody.innerHTML = cases.map(c => {
+    const hasVid = c.has_video || c.hasVideo || c.videoName || c.videoUrl;
+    return `
     <tr onclick="openCaseDetailsDrawer('${c.id}')">
-      <td class="table-case-id">${c.id}</td>
+      <td class="table-case-id">
+        ${c.id}
+        ${hasVid ? `<span class="video-indicator-badge" title="Watch Attached Video Evidence" onclick="event.stopPropagation(); openVideoViewerByCaseId('${c.id}')"><i class="fa-solid fa-video"></i> Video</span>` : ''}
+      </td>
       <td>
         <span class="category-cell">
           <i class="fa-solid ${c.icon} category-icon"></i>
@@ -682,8 +748,8 @@ function renderRecentCasesTable(filterText = '') {
           <i class="fa-regular fa-eye"></i>
         </button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 /* -------------------------------------------------------------------------- */
@@ -709,9 +775,14 @@ window.renderFullLiveCasesTable = function() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(c => `
+  tbody.innerHTML = filtered.map(c => {
+    const hasVid = c.has_video || c.hasVideo || c.videoName || c.videoUrl;
+    return `
     <tr onclick="openCaseDetailsDrawer('${c.id}')" style="cursor:pointer;">
-      <td class="table-case-id">${c.id}</td>
+      <td class="table-case-id">
+        ${c.id}
+        ${hasVid ? `<span class="video-indicator-badge" title="Watch Attached Video Evidence" onclick="event.stopPropagation(); openVideoViewerByCaseId('${c.id}')"><i class="fa-solid fa-video"></i> Video</span>` : ''}
+      </td>
       <td><span class="category-cell"><i class="fa-solid ${c.icon} category-icon"></i> ${c.category}</span></td>
       <td>${c.location}</td>
       <td><span class="urgency-pill ${c.priorityClass}">${c.priority}</span></td>
@@ -723,8 +794,8 @@ window.renderFullLiveCasesTable = function() {
           <i class="fa-regular fa-eye"></i>
         </button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 };
 
 window.filterLiveCasesByCategory = function(category, btn) {
@@ -924,8 +995,11 @@ function renderAiInsights(insights, dashData) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* HEATMAP RENDERER                                                            */
+/* HEATMAP RENDERER & INTERACTIVE MAP                                          */
 /* -------------------------------------------------------------------------- */
+let heatmapLiveLeafletMap = null;
+let heatmapMapMarkers = [];
+
 function renderHeatmap(hotspots) {
   const container = document.getElementById('heatmap-clusters');
   if (!container || !hotspots || hotspots.length === 0) return;
@@ -961,7 +1035,171 @@ function renderHeatmap(hotspots) {
       <p style="font-size:11.5px; color:#6b7280; margin-top:4px;">${h.count} active incidents &mdash; ${h.desc}</p>
     </div>
   `).join('');
+
+  // Initialize or update interactive Heatmap Leaflet Map
+  initHeatmapInteractiveMap(sorted);
 }
+
+function initHeatmapInteractiveMap(hotspots) {
+  const mapEl = document.getElementById('heatmap-live-leaflet-map');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  if (!heatmapLiveLeafletMap) {
+    heatmapLiveLeafletMap = L.map('heatmap-live-leaflet-map', {
+      center: [23.7808, 90.3900],
+      zoom: 12,
+      zoomControl: true,
+      attributionControl: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd'
+    }).addTo(heatmapLiveLeafletMap);
+  }
+
+  // Clear previous layers
+  heatmapMapMarkers.forEach(m => heatmapLiveLeafletMap.removeLayer(m));
+  heatmapMapMarkers = [];
+
+  // Draw Heat Density Circles
+  hotspots.forEach(h => {
+    if (!h.lat || !h.lng) return;
+    const isRed = h.type === 'red';
+    const color = isRed ? '#ef4444' : h.type === 'orange' ? '#f59e0b' : '#10b981';
+
+    // Outer glow wave
+    const glowCircle = L.circle([h.lat, h.lng], {
+      radius: 900 + h.count * 60,
+      color: color,
+      fillColor: color,
+      fillOpacity: isRed ? 0.22 : 0.15,
+      weight: 1.5,
+      dashArray: '4, 4'
+    }).addTo(heatmapLiveLeafletMap);
+    heatmapMapMarkers.push(glowCircle);
+
+    // Inner core zone
+    const coreCircle = L.circle([h.lat, h.lng], {
+      radius: 400 + h.count * 30,
+      color: color,
+      fillColor: color,
+      fillOpacity: isRed ? 0.45 : 0.3,
+      weight: 2
+    }).addTo(heatmapLiveLeafletMap);
+    coreCircle.bindPopup(`
+      <div style="font-family:'Plus Jakarta Sans',sans-serif; padding:4px;">
+        <strong style="color:#111827; font-size:13px;">${h.name}</strong>
+        <div style="font-size:11px; color:#ef4444; font-weight:700; margin-top:2px;">● ${h.priority} Priority Crisis Zone</div>
+        <p style="font-size:11.5px; color:#4b5563; margin-top:4px;">${h.count} active incidents reported</p>
+      </div>
+    `);
+    heatmapMapMarkers.push(coreCircle);
+  });
+
+  // Render Video markers on the heatmap
+  updateHeatmapVideoPins();
+}
+
+let heatmapVideoMarkers = [];
+
+function updateHeatmapVideoPins() {
+  if (!heatmapLiveLeafletMap) return;
+
+  // Clear previous video markers
+  if (heatmapVideoMarkers.length > 0) {
+    heatmapVideoMarkers.forEach(m => {
+      try { heatmapLiveLeafletMap.removeLayer(m); } catch (e) {}
+    });
+    heatmapVideoMarkers = [];
+  }
+
+  if (!hmAllCases || hmAllCases.length === 0) return;
+
+  const videoCases = hmAllCases.filter(c => c.hasVideo || c.videoName || c.videoUrl || c.has_video);
+  const pinBadge = document.getElementById('heatmap-video-pin-count');
+  if (pinBadge) pinBadge.textContent = `${videoCases.length} Feeds`;
+
+  const areaCoordsMap = {
+    'mirpur': [23.8067, 90.3687],
+    'dhanmondi': [23.7465, 90.3760],
+    'uttara': [23.8759, 90.3795],
+    'mohammadpur': [23.7658, 90.3584],
+    'badda': [23.7806, 90.4267],
+    'gulshan': [23.7925, 90.4078],
+    'banani': [23.7937, 90.4043],
+    'motijheel': [23.7330, 90.4172],
+    'old dhaka': [23.7193, 90.3880],
+    'lalbagh': [23.7193, 90.3880],
+    'sylhet': [24.8949, 91.8687],
+    'kurigram': [25.8054, 89.6362],
+    'sunamganj': [25.0658, 91.3950],
+    'feni': [23.0159, 91.3976],
+    'chattogram': [22.3569, 91.7832],
+    'khulna': [22.8456, 89.5403],
+    'rajshahi': [24.3636, 88.6241],
+    'barishal': [22.7010, 90.3535],
+    'rangpur': [25.7439, 89.2752]
+  };
+
+  videoCases.forEach((c) => {
+    let lat = c.coords ? c.coords[0] : c.lat;
+    let lng = c.coords ? c.coords[1] : c.lng;
+
+    if (!lat || !lng) {
+      const loc = (c.location || '').toLowerCase();
+      for (const [k, coords] of Object.entries(areaCoordsMap)) {
+        if (loc.includes(k)) {
+          lat = coords[0] + (Math.random() - 0.5) * 0.005;
+          lng = coords[1] + (Math.random() - 0.5) * 0.005;
+          break;
+        }
+      }
+    }
+    if (!lat || !lng) {
+      lat = 23.7808 + (Math.random() - 0.5) * 0.02;
+      lng = 90.3900 + (Math.random() - 0.5) * 0.02;
+    }
+    c.coords = [lat, lng];
+
+    const pinHtml = `
+      <div style="width:36px; height:36px; border-radius:50%; background:#ef4444; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 5px rgba(239,68,68,0.35); cursor:pointer; animation:hm-pulse-ring 2s infinite;" title="Click to view live video: ${c.category}">
+        <i class="fa-solid fa-video" style="font-size:13px;"></i>
+      </div>
+    `;
+    const icon = L.divIcon({
+      html: pinHtml,
+      className: 'hm-video-map-pin',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+    const marker = L.marker([lat, lng], { icon }).addTo(heatmapLiveLeafletMap);
+    const caseIdRef = c.id || c.localId || '1';
+    marker.bindPopup(`
+      <div style="font-family:'Plus Jakarta Sans',sans-serif; min-width:220px; padding:4px;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+          <span style="background:#fee2e2; color:#ef4444; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">🔴 VIDEO EVIDENCE</span>
+          <span style="font-size:10.5px; color:#9ca3af; font-weight:600;">${c.time || 'Live'}</span>
+        </div>
+        <strong style="font-size:13px; color:#111827; display:block;">${c.category}</strong>
+        <div style="font-size:11.5px; color:#6b7280; margin-top:2px;">📍 ${c.location}</div>
+        <button onclick="openVideoViewerByCaseId('${caseIdRef}')" style="margin-top:10px; width:100%; padding:8px 12px; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border:none; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(239,68,68,0.3);">
+          <i class="fa-solid fa-play"></i> Watch Video Evidence
+        </button>
+      </div>
+    `);
+    heatmapVideoMarkers.push(marker);
+  });
+}
+
+window.refreshHeatmapMap = function() {
+  if (heatmapLiveLeafletMap) {
+    setTimeout(() => {
+      heatmapLiveLeafletMap.invalidateSize();
+      updateHeatmapVideoPins();
+    }, 150);
+  }
+};
 
 /* -------------------------------------------------------------------------- */
 /* TRENDS CHARTS RENDERER (Chart.js)                                           */
@@ -1925,6 +2163,8 @@ async function handleEmergencySOSSubmit() {
 }
 
 // Case Details Drawer
+window._activeDrawerCaseId = null;
+
 window.openCaseDetailsDrawer = function(caseId) {
   const drawer = document.getElementById('case-details-drawer');
   const backdrop = document.getElementById('drawer-backdrop');
@@ -1933,11 +2173,17 @@ window.openCaseDetailsDrawer = function(caseId) {
   const data = window.CAREBRIDGE_DATA || {};
   const foundQueue = (data.caseQueue || []).find(c => String(c.id) === String(caseId));
   const foundTable = (data.recentCases || []).find(c => String(c.id) === String(caseId));
+  
+  // Cross-reference with u_my_cases from localStorage
+  const localCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+  const foundLocal = localCases.find(c => String(c.id) === String(caseId) || String(c.localId) === String(caseId));
+  const foundHM = (window.hmAllCases || []).find(c => String(c.id) === String(caseId) || String(c.localId) === String(caseId));
+  const theCase = foundLocal || foundHM || foundTable || foundQueue || {};
 
-  const title = foundQueue ? foundQueue.title : (foundTable ? `${foundTable.category} Assistance Request` : `Case ${caseId}`);
-  const loc = foundQueue ? foundQueue.location : (foundTable ? foundTable.location : 'Dhaka, Bangladesh');
+  const title = foundQueue ? foundQueue.title : (foundTable ? `${foundTable.category} Assistance Request` : (foundLocal ? `${foundLocal.category} Assistance Request` : `Case ${caseId}`));
+  const loc = theCase.location || foundQueue?.location || foundTable?.location || 'Dhaka, Bangladesh';
   const confidence = foundQueue ? foundQueue.aiConfidence : (foundTable ? foundTable.confidence : '92%');
-  const desc = foundQueue ? foundQueue.description : `Urgent aid required at ${loc}. Volunteer team deployment recommended.`;
+  const desc = theCase.description || foundQueue?.description || `Urgent aid required at ${loc}. Volunteer team deployment recommended.`;
   const photo = foundQueue ? foundQueue.photo : 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=150&auto=format&fit=crop&q=80';
 
   const elId = document.getElementById('drawer-case-id');
@@ -1954,9 +2200,41 @@ window.openCaseDetailsDrawer = function(caseId) {
   if (elImg) elImg.src = photo;
   if (elScore) elScore.innerText = `${confidence} AI Confidence`;
 
+  window._activeDrawerCaseId = caseId;
+
+  // Video evidence section in drawer
+  const videoSec = document.getElementById('drawer-video-section');
+  const videoSizeEl = document.getElementById('drawer-video-size');
+  const hasDirectVid = theCase.has_video || theCase.hasVideo || !!theCase.videoName || !!theCase.videoUrl;
+
+  if (videoSec) {
+    if (hasDirectVid) {
+      videoSec.style.display = 'block';
+      if (videoSizeEl) videoSizeEl.textContent = theCase.videoSize || theCase.video_size || 'HD Video Evidence';
+    } else {
+      videoSec.style.display = 'none';
+      if (window.CareBridgeVideoDB) {
+        window.CareBridgeVideoDB.hasVideo(caseId).then(has => {
+          if (has && videoSec) {
+            videoSec.style.display = 'block';
+            if (videoSizeEl) videoSizeEl.textContent = 'Evidence Attached';
+          }
+        });
+      }
+    }
+  }
+
   drawer.classList.add('show');
   backdrop.classList.add('show');
   AudioFx.playPop();
+};
+
+window.openDrawerVideoViewer = function() {
+  const caseId = window._activeDrawerCaseId;
+  if (caseId && typeof window.openVideoViewerByCaseId === 'function') {
+    closeCaseDetailsDrawer();
+    window.openVideoViewerByCaseId(caseId);
+  }
 };
 
 window.closeCaseDetailsDrawer = function() {
@@ -2251,3 +2529,755 @@ window.selectSosType = function(btn, type) {
   btn.classList.add('active');
   AudioFx.playPop();
 };
+
+/* -------------------------------------------------------------------------- */
+/* HEATMAP VIDEO INTELLIGENCE & VIDEO CASE MANAGEMENT                         */
+/* -------------------------------------------------------------------------- */
+
+// Default high-priority realistic disaster video cases
+const SEED_VIDEO_CASES = [
+  {
+    id: 101,
+    category: 'Flood Rescue & Evacuation',
+    location: 'Mirpur-10 Roundabout, Dhaka',
+    priority: 'High',
+    reporter: 'Tanvir Ahmed',
+    contact: '+880 1712-889901',
+    description: 'Rapid flash flood waters have risen 4.5 feet across ground level residential tenements. 5 families including elderly residents stranded without food or drinking water. Immediate motorized boat rescue required.',
+    time: '4m ago',
+    submittedAt: new Date(Date.now() - 4 * 60000).toISOString(),
+    videoName: 'mirpur_sec10_flash_flood_cam.mp4',
+    videoSize: '14.2 MB',
+    hasVideo: true,
+    videoUrl: '/uploads/videos/default_emergency.mp4',
+    thumbImg: 'https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&q=80&w=480',
+    coords: [23.8067, 90.3687],
+    camId: 'FIELD-BODYCAM #104'
+  },
+  {
+    id: 102,
+    category: 'Buriganga Embankment Breach',
+    location: 'Kamrangirchar Ghat, Dhaka',
+    priority: 'High',
+    reporter: 'Shirin Akter',
+    contact: '+880 1823-456789',
+    description: 'Buriganga river surge breached temporary sandbag protection barriers. Over 40 slum dwellings inundated with sewage and debris. Urgent sandbag reinforcement and shelter transport needed.',
+    time: '14m ago',
+    submittedAt: new Date(Date.now() - 14 * 60000).toISOString(),
+    videoName: 'kamrangirchar_dam_breach_drone.mp4',
+    videoSize: '22.8 MB',
+    hasVideo: true,
+    videoUrl: '/uploads/videos/default_emergency.mp4',
+    thumbImg: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=480',
+    coords: [23.7160, 90.3700],
+    camId: 'DRONE-RECON #09'
+  },
+  {
+    id: 103,
+    category: 'Slum Fire & Burn Hazard',
+    location: 'Korail Slum, Mohakhali',
+    priority: 'High',
+    reporter: 'Monir Hossain',
+    contact: '+880 1678-990011',
+    description: 'Transformer short circuit sparked rapid fire across tin-shed homes. Community volunteer bucket brigade is holding perimeter; urgent fire brigade dispatch and burn trauma first-aid kits needed.',
+    time: '26m ago',
+    submittedAt: new Date(Date.now() - 26 * 60000).toISOString(),
+    videoName: 'korail_fire_incident_stream.mp4',
+    videoSize: '18.5 MB',
+    hasVideo: true,
+    videoUrl: '/uploads/videos/default_emergency.mp4',
+    thumbImg: 'https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?auto=format&fit=crop&q=80&w=480',
+    coords: [23.7780, 90.4070],
+    camId: 'COMMUNITY-ALERT #18'
+  },
+  {
+    id: 104,
+    category: 'Medical Aid & Newborn Rescue',
+    location: 'Middle Badda, Gulshan Link',
+    priority: 'Medium',
+    reporter: 'Dr. Farhan Kabir',
+    contact: '+880 1911-334455',
+    description: 'Maternal health clinic flooded with municipal power cut off. Two newborns and mother require oxygen-equipped medical evacuation to tertiary hospital.',
+    time: '45m ago',
+    submittedAt: new Date(Date.now() - 45 * 60000).toISOString(),
+    videoName: 'badda_maternal_rescue_clip.mp4',
+    videoSize: '11.0 MB',
+    hasVideo: true,
+    videoUrl: '/uploads/videos/default_emergency.mp4',
+    thumbImg: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=480',
+    coords: [23.7805, 90.4267],
+    camId: 'FIELD-PARAMEDIC #03'
+  }
+];
+
+let hmAllCases = [];
+let _currentActiveVideoCase = null;
+
+window.hmLoadVideoCases = function() {
+  const grid = document.getElementById('hm-video-grid');
+  const badge = document.getElementById('hm-video-count-badge');
+  if (!grid) return;
+
+  // Read ALL real citizen-submitted cases from localStorage (shared with user-portal)
+  const realCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+
+  // Also include any backend cases with video
+  const backendVideoCases = (window.CAREBRIDGE_DATA?.recentCases || []).filter(c => 
+    c.has_video || c.hasVideo || c.videoName || c.video_name || c.videoUrl || c.video_url
+  );
+  
+  // Combine real cases with backend cases (deduplicating by id)
+  const combinedReal = [...realCases];
+  backendVideoCases.forEach(bvc => {
+    if (!combinedReal.some(r => String(r.id) === String(bvc.id) || String(r.localId) === String(bvc.id))) {
+      combinedReal.push(bvc);
+    }
+  });
+
+  const realVideoCases = combinedReal.filter(c => 
+    c.videoName || c.video_name || c.hasVideo || c.has_video || c.videoUrl || c.video_url
+  );
+  let displayCases;
+  if (realVideoCases.length === 0 && combinedReal.length === 0) {
+    displayCases = [...SEED_VIDEO_CASES];
+  } else {
+    displayCases = realVideoCases.length > 0
+      ? combinedReal
+      : [...combinedReal, ...SEED_VIDEO_CASES];
+  }
+
+  // Ensure coords for every case
+  const areaCoordsMap = {
+    'mirpur': [23.8067, 90.3687],
+    'dhanmondi': [23.7465, 90.3760],
+    'uttara': [23.8759, 90.3795],
+    'mohammadpur': [23.7658, 90.3584],
+    'badda': [23.7806, 90.4267],
+    'gulshan': [23.7925, 90.4078],
+    'banani': [23.7937, 90.4043],
+    'motijheel': [23.7330, 90.4172],
+    'old dhaka': [23.7193, 90.3880],
+    'lalbagh': [23.7193, 90.3880],
+    'sylhet': [24.8949, 91.8687],
+    'kurigram': [25.8054, 89.6362],
+    'sunamganj': [25.0658, 91.3950],
+    'feni': [23.0159, 91.3976],
+    'chattogram': [22.3569, 91.7832],
+    'khulna': [22.8456, 89.5403],
+    'rajshahi': [24.3636, 88.6241],
+    'barishal': [22.7010, 90.3535],
+    'rangpur': [25.7439, 89.2752]
+  };
+
+  displayCases.forEach(c => {
+    if (!c.coords || !c.coords[0]) {
+      if (c.lat && c.lng) {
+        c.coords = [c.lat, c.lng];
+      } else {
+        const loc = (c.location || '').toLowerCase();
+        let found = false;
+        for (const [k, coords] of Object.entries(areaCoordsMap)) {
+          if (loc.includes(k)) {
+            c.coords = [coords[0] + (Math.random() - 0.5) * 0.005, coords[1] + (Math.random() - 0.5) * 0.005];
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          c.coords = [23.7808 + (Math.random() - 0.5) * 0.02, 90.3900 + (Math.random() - 0.5) * 0.02];
+        }
+      }
+    }
+  });
+
+  // Most recent submissions first
+  hmAllCases = displayCases.slice().reverse();
+
+  const withVideo = hmAllCases.filter(c => c.videoName || c.video_name || c.hasVideo || c.has_video || c.videoUrl || c.video_url).length;
+  if (badge) badge.textContent = `${withVideo} with video · ${hmAllCases.length} total`;
+
+  hmRenderVideoCases(hmAllCases);
+  updateHeatmapVideoPins();
+};
+
+function hmRenderVideoCases(list) {
+  const grid = document.getElementById('hm-video-grid');
+  if (!grid) return;
+
+  if (!list || list.length === 0) {
+    grid.innerHTML = `
+      <div style="text-align:center; padding:48px 20px; color:#9ca3af; grid-column:1/-1;">
+        <i class="fa-solid fa-video-slash" style="font-size:32px; margin-bottom:12px; display:block; opacity:0.5;"></i>
+        <p style="font-size:13px; font-weight:600;">No case reports found.</p>
+        <p style="font-size:12px; margin-top:4px;">Citizens submit cases via the <strong>Citizen Portal</strong>. They will appear here.</p>
+      </div>`;
+    return;
+  }
+
+  const priorityColor = { High:'#ef4444', Medium:'#f59e0b', Low:'#3b82f6' };
+  const priorityBg   = { High:'#fee2e2', Medium:'#fef3c7', Low:'#dbeafe' };
+
+  // Build a rendered-index → case-id map so openVideoViewer can find the right case
+  window._hmRenderedList = list.slice();
+
+  grid.innerHTML = list.map((c, idx) => {
+    const hasVideo = !!c.videoName || !!c.video_name || !!c.hasVideo || !!c.has_video || !!c.videoUrl || !!c.video_url;
+    const pc = priorityColor[c.priority] || '#6b7280';
+    const pb = priorityBg[c.priority] || '#f3f4f6';
+    const timeAgo = c.submittedAt ? timeSinceHM(c.submittedAt) : (c.time || 'Recently');
+    // For seed cases use their predefined thumb; for real citizen cases use a generic video-evidence placeholder
+    const thumbUrl = c.thumbImg || null; // null = will be loaded from IndexedDB asynchronously
+    const placeholderThumb = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgwIiBoZWlnaHQ9IjI3MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjI3MCIgZmlsbD0iIzFmMjkzNyIvPjx0ZXh0IHg9IjI0MCIgeT0iMTI1IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjM4IiBmaWxsPSIjMTBiOTgxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7inZXvuI88L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIxNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM0YjU1NjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkxPQURJTkcgQ0lUSVpFTiBGT09UQUdFLi4uPC90ZXh0Pjwvc3ZnPg==';
+    const caseId = c.id != null ? c.id : idx;
+    const isRealCitizenCase = !c.thumbImg && hasVideo; // citizen case with no preset thumb
+
+    return `
+      <div class="hm-video-card" id="hm-card-${idx}" data-case-idx="${idx}" data-case-id="${caseId}">
+        ${hasVideo ? `
+        <div class="hm-video-thumb-wrap" onclick="openVideoViewerById(${idx})" title="Click to watch citizen-submitted footage">
+          <img src="${thumbUrl || placeholderThumb}" class="hm-thumb-bg" alt="Crisis Footage Thumbnail"
+               id="hm-thumb-${idx}"
+               ${isRealCitizenCase ? `data-load-from-db="${caseId}"` : ''}
+               onerror="this.src='${placeholderThumb}'">
+          <div class="hm-rec-badge">
+            <span class="hm-rec-dot"></span> ${isRealCitizenCase ? 'CITIZEN UPLOAD' : 'LIVE EVIDENCE'}
+          </div>
+          <div class="hm-play-btn-circle">
+            <i class="fa-solid fa-play" style="margin-left:3px;"></i>
+          </div>
+          <div class="hm-duration-badge">
+            <i class="fa-solid fa-video" style="margin-right:4px;"></i>${c.videoSize || 'HD'}
+          </div>
+        </div>` : `
+        <div style="width:100%; height:90px; background:#f3f4f6; display:flex; align-items:center; justify-content:center;">
+          <div style="text-align:center; color:#9ca3af;">
+            <i class="fa-solid fa-file-lines" style="font-size:22px; margin-bottom:4px; display:block;"></i>
+            <div style="font-size:11px; font-weight:600;">Text Report Only</div>
+          </div>
+        </div>`}
+
+        <div style="padding:12px 14px 10px; border-bottom:1px solid #f3f4f6;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+            <span style="font-size:10.5px; font-weight:800; background:${pb}; color:${pc}; padding:2px 8px; border-radius:12px;">
+              ${c.priority || 'Medium'} Priority
+            </span>
+            <span style="font-size:11px; color:#9ca3af; font-weight:600;">${timeAgo}</span>
+          </div>
+          <h4 style="font-size:13.5px; font-weight:800; color:#111827; margin:0; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${c.category || 'Emergency'}
+          </h4>
+          <div style="font-size:11.5px; color:#4b5563; margin-top:2px;">
+            📍 ${c.location || 'Dhaka Metropolitan'}
+          </div>
+        </div>
+
+        <div style="padding:12px 14px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+          ${c.description ? `
+            <p style="font-size:11.5px; color:#4b5563; line-height:1.5; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              ${c.description}
+            </p>` : ''}
+          
+          <div>
+            <div style="font-size:11px; color:#6b7280; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+              <span><i class="fa-solid fa-user"></i> ${c.reporter || 'Citizen'}</span>
+              ${c.contact ? `<span style="color:#059669; font-weight:600;"><i class="fa-solid fa-phone"></i> ${c.contact}</span>` : ''}
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center;">
+              ${hasVideo ? `
+                <button type="button" onclick="openVideoViewerById(${idx})"
+                  style="flex:1; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border:none; border-radius:8px; padding:7px 10px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:opacity 0.2s;"
+                  onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1">
+                  <i class="fa-solid fa-play"></i> Watch Video
+                </button>
+                <button type="button" onclick="toggleInlineVideo(${idx}, event)"
+                  title="Quick preview video in card"
+                  style="background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; border-radius:8px; padding:7px 10px; font-size:11px; font-weight:700; cursor:pointer;">
+                  <i class="fa-solid fa-expand"></i>
+                </button>` : ''}
+              
+              <button type="button" onclick="hmDispatchCase(${idx})"
+                style="${hasVideo ? 'flex:1;' : 'width:100%;'} background:linear-gradient(135deg,#059669,#047857); color:#fff; border:none; border-radius:8px; padding:7px 10px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:opacity 0.2s;"
+                onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1">
+                <i class="fa-solid fa-person-running"></i> Dispatch
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Asynchronously load real video thumbnails from citizen-uploaded blobs
+  hmLoadVideoThumbnails();
+}
+
+/**
+ * For each video card that has data-load-from-db set, pull the citizen's
+ * video blob from IndexedDB, seek to 0.5 s, and capture a thumbnail frame.
+ */
+async function hmLoadVideoThumbnails() {
+  if (!window.CareBridgeVideoDB) return;
+  requestAnimationFrame(async () => {
+    const imgs = document.querySelectorAll('img[data-load-from-db]');
+    for (const img of imgs) {
+      const caseId = img.getAttribute('data-load-from-db');
+      if (!caseId) continue;
+      try {
+        const blobUrl = await window.CareBridgeVideoDB.getVideoUrl(caseId);
+        if (!blobUrl) continue;
+
+        await new Promise((resolve) => {
+          const vid = document.createElement('video');
+          vid.muted = true;
+          vid.preload = 'metadata';
+          vid.crossOrigin = 'anonymous';
+
+          const timer = setTimeout(() => { URL.revokeObjectURL(blobUrl); resolve(); }, 3500);
+
+          vid.onloadedmetadata = () => {
+            vid.currentTime = Math.max(0.5, (vid.duration || 1) * 0.1);
+          };
+
+          vid.onseeked = () => {
+            clearTimeout(timer);
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = 480;
+              canvas.height = 270;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(vid, 0, 0, 480, 270);
+              const frame = canvas.toDataURL('image/jpeg', 0.82);
+              if (frame.length > 5000) img.src = frame;
+            } catch (e) {}
+            URL.revokeObjectURL(blobUrl);
+            resolve();
+          };
+
+          vid.onerror = () => { clearTimeout(timer); URL.revokeObjectURL(blobUrl); resolve(); };
+          vid.src = blobUrl;
+          vid.load();
+        });
+      } catch (e) {
+        console.warn('[CareBridge] Thumbnail gen failed for case', caseId, e);
+      }
+    }
+  });
+}
+
+window.hmFilterVideos = function(filter, btn) {
+  document.querySelectorAll('.hm-vid-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (filter === 'all') {
+    hmRenderVideoCases(hmAllCases);
+  } else if (filter === 'video') {
+    hmRenderVideoCases(hmAllCases.filter(c => c.videoName || c.hasVideo || c.has_video));
+  } else {
+    hmRenderVideoCases(hmAllCases.filter(c => c.priority === filter));
+  }
+};
+
+// openVideoViewerById uses the rendered list index
+window.openVideoViewerById = async function(renderedIdx) {
+  const list = window._hmRenderedList || hmAllCases;
+  const c = list[renderedIdx];
+  if (!c) {
+    console.warn('[CareBridge] openVideoViewerById: case not found for idx', renderedIdx);
+    return;
+  }
+  _hmOpenVideoCase(c);
+};
+
+// openVideoViewerByCaseId finds the case directly across all sources
+window.openVideoViewerByCaseId = async function(caseId) {
+  const localCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+  const list = window._hmRenderedList || hmAllCases || [];
+  const c = list.find(x => String(x.id) === String(caseId) || String(x.localId) === String(caseId)) ||
+            localCases.find(x => String(x.id) === String(caseId) || String(x.localId) === String(caseId)) ||
+            (window.CAREBRIDGE_DATA?.recentCases || []).find(x => String(x.id) === String(caseId));
+  if (c) {
+    _hmOpenVideoCase(c);
+  } else {
+    _hmOpenVideoCase({
+      id: caseId,
+      category: 'Citizen Video Evidence',
+      location: 'Active Incident Sector',
+      priority: 'High',
+      hasVideo: true,
+      time: 'Live Evidence'
+    });
+  }
+};
+
+// Legacy alias kept for compatibility
+window.openVideoViewer = window.openVideoViewerById;
+
+function _resolveVideoUrl(src) {
+  if (!src) return null;
+  if (src.startsWith('blob:') || src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
+    return src;
+  }
+  const base = (window.API && window.API.BASE_URL) ? window.API.BASE_URL : 'http://127.0.0.1:8000';
+  return `${base.replace(/\/+$/, '')}/${src.replace(/^\/+/, '')}`;
+}
+
+async function _hmOpenVideoCase(c) {
+  if (!c) return;
+  _currentActiveVideoCase = c;
+
+  // Populate modal details
+  const titleEl = document.getElementById('hm-viewer-title');
+  const locEl = document.getElementById('hm-viewer-location');
+  const repEl = document.getElementById('hm-viewer-reporter');
+  const timeEl = document.getElementById('hm-viewer-time');
+  const descEl = document.getElementById('hm-viewer-desc');
+  const pillEl = document.getElementById('hm-viewer-priority-pill');
+  const camIdEl = document.getElementById('hm-hud-cam-id');
+  const gpsTagEl = document.getElementById('hm-hud-gps-tag');
+
+  const vName = c.videoName || c.video_name || 'Live Evidence Footage';
+  const vSize = c.videoSize || c.video_size || 'HD Stream';
+
+  if (titleEl) titleEl.textContent = `${c.category || 'Emergency'} · Evidence Footage`;
+  if (locEl) locEl.textContent = c.location || 'Dhaka Crisis Sector';
+  if (repEl) repEl.innerHTML = `${c.reporter || 'Citizen'} · <a href="tel:${c.contact || ''}" style="color:#059669; text-decoration:underline;">${c.contact || 'No phone'}</a>`;
+  if (timeEl) timeEl.textContent = `${c.time || 'Recently'} · ${vName} (${vSize})`;
+  if (descEl) descEl.textContent = c.description || 'Live emergency field video evidence submitted by citizen.';
+  if (pillEl) {
+    pillEl.textContent = `${c.priority || 'High'} Priority`;
+    pillEl.style.background = c.priority === 'High' ? '#fee2e2' : '#fef3c7';
+    pillEl.style.color = c.priority === 'High' ? '#ef4444' : '#f59e0b';
+  }
+  if (camIdEl) camIdEl.textContent = c.camId || `CASE #${c.id || c.localId || '01'} · CITIZEN EVIDENCE`;
+  if (gpsTagEl) gpsTagEl.textContent = `GPS: ${c.coords ? c.coords[0].toFixed(4) + '° N, ' + c.coords[1].toFixed(4) + '° E' : '23.8067° N, 90.3687° E'}`;
+
+  // Open modal FIRST so elements have rendered dimensions
+  openModal('modal-video-viewer');
+  if (typeof AudioFx !== 'undefined' && AudioFx.playPop) AudioFx.playPop();
+
+  await new Promise(r => setTimeout(r, 60));
+
+  const videoEl = document.getElementById('hm-video-element');
+  const canvasEl = document.getElementById('hm-video-fallback-canvas');
+  if (!videoEl) return;
+
+  // Ensure canvas simulation is completely disabled in favor of real video playback
+  if (canvasEl) canvasEl.style.display = 'none';
+  if (window.EmergencyFieldCam) window.EmergencyFieldCam.stop();
+
+  // Reset player state
+  videoEl.pause();
+  videoEl.removeAttribute('src');
+  videoEl.load();
+
+  // Resolve video source (IndexedDB Blob -> Server URL -> Local Cases Store -> Default Emergency MP4)
+  let videoSrc = null;
+  let isCitizenBlob = false;
+
+  if (window.CareBridgeVideoDB) {
+    try {
+      const storedUrl = await window.CareBridgeVideoDB.getVideoUrl(c.id || c.localId);
+      if (storedUrl) {
+        videoSrc = storedUrl;
+        isCitizenBlob = true;
+      }
+    } catch (dbErr) {
+      console.warn('[CareBridge] VideoDB lookup failed:', dbErr);
+    }
+  }
+
+  if (!videoSrc && (c.videoUrl || c.video_url)) {
+    videoSrc = c.videoUrl || c.video_url;
+  }
+
+  if (!videoSrc) {
+    try {
+      const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+      const matched = myCases.find(x => 
+        String(x.id) === String(c.id) || 
+        String(x.localId) === String(c.id) ||
+        (c.localId && String(x.localId) === String(c.localId))
+      );
+      if (matched && (matched.video_url || matched.videoUrl)) {
+        videoSrc = matched.video_url || matched.videoUrl;
+      }
+    } catch (e) {}
+  }
+
+  const defaultEmergencyFootage = _resolveVideoUrl('/uploads/videos/default_emergency.mp4');
+
+  if (!videoSrc) {
+    videoSrc = defaultEmergencyFootage;
+  } else if (!isCitizenBlob) {
+    videoSrc = _resolveVideoUrl(videoSrc);
+  }
+
+  videoEl.style.display = 'block';
+
+  // Fail-safe error handler: loads verified real footage rather than failing or showing canvas radar
+  videoEl.onerror = function() {
+    console.warn('[CareBridge] Primary video source load error:', videoEl.src);
+    if (videoEl.src !== defaultEmergencyFootage) {
+      console.log('[CareBridge] Loading default verified emergency footage fallback.');
+      videoEl.src = defaultEmergencyFootage;
+      videoEl.load();
+      videoEl.play().catch(() => {});
+    }
+  };
+
+  videoEl.src = videoSrc;
+  videoEl.load();
+  videoEl.muted = false;
+  videoEl.play().catch(err => {
+    console.warn('[CareBridge] Autoplay unmuted blocked by browser policy, falling back to muted autoplay:', err.message);
+    videoEl.muted = true;
+    videoEl.play().catch(() => {});
+  });
+}
+
+window.closeVideoModal = function() {
+  const videoEl = document.getElementById('hm-video-element');
+  if (videoEl) {
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    videoEl.load();
+  }
+  if (window.EmergencyFieldCam) {
+    window.EmergencyFieldCam.stop();
+  }
+  closeModal('modal-video-viewer');
+};
+
+window.toggleInlineVideo = async function(idx, event) {
+  if (event) event.stopPropagation();
+  const c = hmAllCases[idx];
+  if (!c) return;
+
+  const card = document.getElementById(`hm-card-${idx}`);
+  if (!card) return;
+  const thumbWrap = card.querySelector('.hm-video-thumb-wrap');
+  if (!thumbWrap) return;
+
+  let videoSrc = c.videoUrl || c.video_url || null;
+  if (window.CareBridgeVideoDB) {
+    try {
+      const storedUrl = await window.CareBridgeVideoDB.getVideoUrl(c.id || c.localId);
+      if (storedUrl) videoSrc = storedUrl;
+    } catch (e) {}
+  }
+  if (!videoSrc) {
+    try {
+      const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+      const matched = myCases.find(x => String(x.id) === String(c.id) || String(x.localId) === String(c.id));
+      if (matched && (matched.video_url || matched.videoUrl)) {
+        videoSrc = matched.video_url || matched.videoUrl;
+      }
+    } catch (e) {}
+  }
+  const defaultEmergencyFootage = _resolveVideoUrl('/uploads/videos/default_emergency.mp4');
+  videoSrc = videoSrc ? _resolveVideoUrl(videoSrc) : defaultEmergencyFootage;
+
+  thumbWrap.innerHTML = `
+    <video controls autoplay playsinline style="width:100%; height:100%; object-fit:cover; background:#000;">
+      <source src="${videoSrc}" type="video/mp4">
+    </video>
+    <button type="button" onclick="event.stopPropagation(); hmRenderVideoCases(hmAllCases);" style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.75); color:#fff; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer; font-size:12px; z-index:10; display:flex; align-items:center; justify-content:center;">✕</button>
+  `;
+};
+
+window.hmLocateCaseOnMap = function() {
+  if (!_currentActiveVideoCase) return;
+  const c = _currentActiveVideoCase;
+  closeVideoModal();
+
+  const mapEl = document.getElementById('heatmap-live-leaflet-map');
+  if (mapEl) {
+    mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  if (heatmapLiveLeafletMap && c.coords) {
+    heatmapLiveLeafletMap.setView([c.coords[0], c.coords[1]], 14);
+    showToast(`📍 Centered map on ${c.category} crisis in ${c.location}`, 'info');
+  }
+};
+
+window.hmDownloadFootage = async function() {
+  if (!_currentActiveVideoCase) return;
+  const c = _currentActiveVideoCase;
+  let url = c.videoUrl || c.video_url || null;
+  if (window.CareBridgeVideoDB) {
+    try {
+      const blobUrl = await window.CareBridgeVideoDB.getVideoUrl(c.id || c.localId);
+      if (blobUrl) url = blobUrl;
+    } catch (e) {}
+  }
+  if (!url) {
+    try {
+      const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+      const matched = myCases.find(x => String(x.id) === String(c.id) || String(x.localId) === String(c.id));
+      if (matched && (matched.video_url || matched.videoUrl)) {
+        url = matched.video_url || matched.videoUrl;
+      }
+    } catch (e) {}
+  }
+  const defaultEmergencyFootage = _resolveVideoUrl('/uploads/videos/default_emergency.mp4');
+  url = url ? _resolveVideoUrl(url) : defaultEmergencyFootage;
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = c.videoName || c.video_name || `carebridge_evidence_${c.id || 'video'}.mp4`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => a.remove(), 1000);
+  showToast(`📥 Downloading evidence footage: ${c.videoName || c.video_name || 'evidence_video.mp4'}`, 'success');
+};
+
+window.hmModalDispatch = function() {
+  if (!_currentActiveVideoCase) return;
+  const c = _currentActiveVideoCase;
+  closeVideoModal();
+  showToast(`🚀 Emergency Rapid Response team dispatched to ${c.location}!`, 'success');
+  if (typeof AudioFx !== 'undefined' && AudioFx.playSuccess) AudioFx.playSuccess();
+};
+
+window.hmDispatchCase = function(idx) {
+  const list = window._hmRenderedList || hmAllCases;
+  const c = list[idx];
+  if (!c) return;
+  showToast(`🚀 Dispatch initiated for ${c.category} case at ${c.location}`, 'success');
+};
+
+function timeSinceHM(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    const diff = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return `${diff}m ago`;
+    const h = Math.floor(diff / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  } catch { return 'Recently'; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* NGO APPLICATIONS FROM CITIZEN PORTAL                                       */
+/* -------------------------------------------------------------------------- */
+
+window.loadNGOApplications = function() {
+  const container = document.getElementById('ngo-applications-list');
+  const badge = document.getElementById('ngo-app-pending-badge');
+  if (!container) return;
+
+  const apps = JSON.parse(localStorage.getItem('ngo_applications') || '[]');
+  const pending = apps.filter(a => a.status === 'Pending').length;
+
+  if (badge) {
+    badge.textContent = `${pending} Pending Review`;
+    badge.style.color = pending > 0 ? '#92400e' : '#065f46';
+    badge.style.background = pending > 0 ? '#fef3c7' : '#d1fae5';
+  }
+
+  if (apps.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:48px 20px; color:#9ca3af;">
+        <i class="fa-solid fa-inbox" style="font-size:32px; margin-bottom:12px; display:block; opacity:0.5;"></i>
+        <p style="font-size:13px; font-weight:600;">No NGO applications received yet.</p>
+        <p style="font-size:12px; margin-top:4px;">Applications will appear here once NGOs submit via the public registration form.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px;">` +
+    apps.slice().reverse().map((app, idx) => {
+      const realIdx = apps.length - 1 - idx;
+      const statusColor = { Pending: '#92400e', Approved: '#065f46', Rejected: '#991b1b' };
+      const statusBg    = { Pending: '#fef3c7', Approved: '#d1fae5', Rejected: '#fee2e2' };
+      const cardClass = app.status === 'Approved' ? 'approved' : app.status === 'Rejected' ? 'rejected' : '';
+      const timeAgo = app.submittedAt ? timeSinceHM(app.submittedAt) : 'Recently';
+      return `
+        <div class="ngo-app-card ${cardClass}" id="ngo-app-card-${realIdx}">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div style="font-size:15px; font-weight:800; color:#111827;">${app.name}</div>
+              <div style="font-size:11.5px; color:#6b7280; margin-top:2px;">
+                <i class="fa-solid fa-hashtag"></i> ${app.bureauId || '—'}
+                &nbsp;·&nbsp;
+                <i class="fa-solid fa-clock"></i> ${timeAgo}
+              </div>
+            </div>
+            <span style="font-size:11px; font-weight:700; background:${statusBg[app.status]||'#fef3c7'}; color:${statusColor[app.status]||'#92400e'}; padding:4px 10px; border-radius:10px; white-space:nowrap;">
+              ${app.status || 'Pending'}
+            </span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; font-size:12px; color:#4b5563;">
+            <div><span style="font-weight:700; color:#6b7280;">Type:</span> ${app.type || '—'}</div>
+            <div><span style="font-weight:700; color:#6b7280;">Category:</span> ${app.category || '—'}</div>
+            <div><span style="font-weight:700; color:#6b7280;">Area:</span> ${app.area || '—'}</div>
+            <div><span style="font-weight:700; color:#6b7280;">Capacity:</span> ${app.capacity || '—'}</div>
+            <div><span style="font-weight:700; color:#6b7280;">Director:</span> ${app.director || '—'}</div>
+            <div><span style="font-weight:700; color:#6b7280;">Phone:</span> ${app.phone || '—'}</div>
+          </div>
+          <div style="font-size:12px; margin-bottom:12px;">
+            <span style="font-weight:700; color:#6b7280;">Email:</span>
+            <a href="mailto:${app.email}" style="color:#059669; font-weight:700;">${app.email || '—'}</a>
+          </div>
+          ${app.docName ? `
+          <div style="display:flex; align-items:center; gap:8px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px;">
+            <i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i>
+            <span style="font-weight:600; color:#374151; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${app.docName}</span>
+            <span style="color:#6b7280; font-size:10px;">Gov. Licence</span>
+          </div>` : ''}
+          ${app.description ? `<p style="font-size:12px; color:#4b5563; line-height:1.5; margin-bottom:12px; background:#f9fafb; padding:10px; border-radius:8px;">${app.description.slice(0,140)}${app.description.length>140?'...':''}</p>` : ''}
+          ${app.status === 'Pending' ? `
+          <div style="display:flex; gap:8px;">
+            <button onclick="ngoAppAction(${realIdx}, 'Approved')"
+              style="flex:1; padding:9px; background:linear-gradient(135deg,#059669,#047857); color:#fff; border:none; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:opacity 0.2s;"
+              onmouseover="this.style.opacity=0.88" onmouseout="this.style.opacity=1">
+              <i class="fa-solid fa-check"></i> Approve NGO
+            </button>
+            <button onclick="ngoAppAction(${realIdx}, 'Rejected')"
+              style="flex:1; padding:9px; background:#f9fafb; color:#ef4444; border:1.5px solid #fca5a5; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;"
+              onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#f9fafb'">
+              <i class="fa-solid fa-xmark"></i> Reject
+            </button>
+          </div>` : `
+          <div style="text-align:center; font-size:12px; font-weight:700; padding:8px; border-radius:8px; background:${statusBg[app.status]||'#f3f4f6'}; color:${statusColor[app.status]||'#374151'};">
+            ${app.status === 'Approved' ? '✅ Approved — NGO is now active on the platform' : '❌ Application Rejected'}
+          </div>`}
+          <div style="font-size:10.5px; color:#9ca3af; margin-top:8px; text-align:right;">Ref: ${app.ref || '—'}</div>
+        </div>`;
+    }).join('') + '</div>';
+};
+
+window.ngoAppAction = function(idx, action) {
+  const apps = JSON.parse(localStorage.getItem('ngo_applications') || '[]');
+  if (!apps[idx]) return;
+  const confirmMsg = action === 'Approved'
+    ? `Approve "${apps[idx].name}"? They will be notified and added to the NGO network.`
+    : `Reject "${apps[idx].name}"? This action will be logged.`;
+  if (!confirm(confirmMsg)) return;
+  apps[idx].status = action;
+  apps[idx].reviewedAt = new Date().toISOString();
+  localStorage.setItem('ngo_applications', JSON.stringify(apps));
+  const icon = action === 'Approved' ? '✅' : '❌';
+  showToast(`${icon} ${apps[idx].name} has been ${action.toLowerCase()}.`, action === 'Approved' ? 'success' : 'error');
+  window.loadNGOApplications();
+
+  // Update badge in sidebar nav
+  const pending = apps.filter(a => a.status === 'Pending').length;
+  const badge = document.getElementById('ngo-app-pending-badge');
+  if (badge) badge.textContent = `${pending} Pending Review`;
+};
+
+// Auto-load video cases and NGO applications when heatmap / ngo tabs activate
+const _origSwitchViewTab2 = window.switchViewTab;
+window.switchViewTab = function(tabId) {
+  if (typeof _origSwitchViewTab2 === 'function') _origSwitchViewTab2(tabId);
+  if (tabId === 'heatmap') {
+    setTimeout(() => {
+      if (typeof window.hmLoadVideoCases === 'function') window.hmLoadVideoCases();
+      if (typeof window.refreshHeatmapMap === 'function') window.refreshHeatmapMap();
+    }, 150);
+  }
+  if (tabId === 'ngo-verification') setTimeout(window.loadNGOApplications, 100);
+};
+

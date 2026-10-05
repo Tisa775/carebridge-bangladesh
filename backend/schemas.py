@@ -45,6 +45,7 @@ class AuthResponse(BaseModel):
 # ─── CASES ───────────────────────────────────────────────────────────────────
 
 class CaseCreate(BaseModel):
+    id: Optional[str] = None
     category: str
     location: str
     priority: str = "Medium"
@@ -55,6 +56,10 @@ class CaseCreate(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     photo: Optional[str] = None
+    has_video: Optional[bool] = False
+    video_name: Optional[str] = None
+    video_size: Optional[str] = None
+    video_url: Optional[str] = None
 
 class CaseUpdate(BaseModel):
     status: Optional[str] = None
@@ -62,6 +67,10 @@ class CaseUpdate(BaseModel):
     assigned_ngo: Optional[str] = None
     description: Optional[str] = None
     confidence: Optional[str] = None
+    has_video: Optional[bool] = None
+    video_name: Optional[str] = None
+    video_size: Optional[str] = None
+    video_url: Optional[str] = None
 
 class CaseOut(BaseModel):
     id: str
@@ -81,6 +90,10 @@ class CaseOut(BaseModel):
     lng: Optional[float] = None
     distance: Optional[str] = None
     photo: Optional[str] = None
+    has_video: Optional[bool] = False
+    video_name: Optional[str] = None
+    video_size: Optional[str] = None
+    video_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

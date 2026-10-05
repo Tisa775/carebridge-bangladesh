@@ -222,6 +222,26 @@
     .u-toast.u-toast-success { border-left: 4px solid #10b981; }
     .u-toast.u-toast-error { border-left: 4px solid #ef4444; }
     .u-toast.u-toast-info { border-left: 4px solid #3b82f6; }
+    /* ── VIDEO UPLOAD ZONE ── */
+    .u-video-upload-zone {
+      border: 2px dashed #fca5a5;
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: #fff5f5;
+      transition: all 0.2s;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .u-video-upload-zone:hover,
+    .u-video-upload-zone.dragover {
+      border-color: #ef4444;
+      background: #fee2e2;
+    }
   </style>
 </head>
 <body>
@@ -330,6 +350,41 @@
             <label class="u-form-label">Your Contact Number</label>
             <input type="text" class="u-form-control" id="u-case-contact" placeholder="+8801XXXXXXXXX">
           </div>
+          <!-- ── LIVE VIDEO UPLOAD ── -->
+          <div class="u-form-group">
+            <label class="u-form-label">
+              <i class="fa-solid fa-video" style="color:#ef4444;"></i>
+              Live Video Evidence
+              <span style="font-size:10px; font-weight:500; color:#6b7280; text-transform:none; margin-left:4px;">(optional · max 50 MB)</span>
+            </label>
+            <div class="u-video-upload-zone" id="u-video-zone" onclick="document.getElementById('u-case-video').click()" ondragover="uHandleVideoDragOver(event)" ondrop="uHandleVideoDrop(event)">
+              <input type="file" id="u-case-video" accept="video/*" style="display:none" onchange="uHandleVideoFile(this)">
+              <div id="u-video-placeholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+                <i class="fa-solid fa-circle-play" style="font-size:30px; color:#ef4444; display:block; margin-bottom:8px;"></i>
+                <div style="font-weight:700; font-size:13px; color:#111827;">Click to upload recorded video</div>
+                <div style="font-size:11.5px; color:#6b7280; margin-top:3px;">MP4, WebM, MOV · Maximum 50 MB</div>
+              </div>
+              <div id="u-video-preview" style="display:none;">
+                <video id="u-video-player" controls style="width:100%; max-height:180px; border-radius:8px; object-fit:cover; background:#111;"></video>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+                  <div>
+                    <div id="u-video-filename" style="font-size:12px; font-weight:700; color:#059669;"></div>
+                    <div id="u-video-filesize" style="font-size:11px; color:#6b7280;"></div>
+                  </div>
+                  <button type="button" onclick="event.stopPropagation(); uRemoveVideo()" style="background:#fee2e2; color:#991b1b; border:none; border-radius:8px; padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-trash-can"></i> Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div id="u-video-progress-wrap" style="display:none; margin-top:8px;">
+              <div style="height:4px; background:#e5e7eb; border-radius:4px; overflow:hidden;">
+                <div id="u-video-progress-bar" style="height:100%; background:linear-gradient(90deg,#059669,#10b981); width:0%; transition:width 0.3s; border-radius:4px;"></div>
+              </div>
+              <div id="u-video-progress-text" style="font-size:11px; color:#6b7280; margin-top:4px;"></div>
+            </div>
+          </div>
+
           <button type="submit" class="u-btn-submit">
             <i class="fa-solid fa-paper-plane"></i>
             Submit Emergency Report
@@ -424,12 +479,34 @@
     </div>
   </div>
 
+  <!-- ── MODAL: CITIZEN VIDEO VIEWER ── -->
+  <div class="u-modal-backdrop" id="u-video-modal" onclick="if(event.target===this)closeCitizenVideoModal()">
+    <div class="u-modal" style="position:relative; max-width:540px; padding:24px;">
+      <button class="u-modal-close" onclick="closeCitizenVideoModal()">&times;</button>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+        <span style="width:34px; height:34px; background:#fee2e2; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#ef4444; font-size:16px;">
+          <i class="fa-solid fa-video"></i>
+        </span>
+        <div>
+          <div class="u-modal-title" style="margin:0; font-size:16px;">Citizen Video Evidence</div>
+          <div style="font-size:12px; color:var(--muted);">Recorded incident video submitted with report</div>
+        </div>
+      </div>
+      <video id="u-modal-video-player" controls playsinline style="width:100%; max-height:360px; border-radius:12px; background:#000; display:block;"></video>
+      <div id="u-modal-video-meta" style="margin-top:12px; font-size:12px; color:#4b5563; display:flex; justify-content:space-between; align-items:center;">
+        <span id="u-modal-video-filename">Footage.mp4</span>
+        <button type="button" onclick="closeCitizenVideoModal()" style="background:#f3f4f6; border:none; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── TOAST CONTAINER ── -->
   <div id="u-toast-container"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="api.js"></script>
   <script src="auth.js"></script>
+  <script src="video-store.js"></script>
   <script>
     // ── Retrieve user session ──
     const SESSION_KEY = 'carebridge_auth';
@@ -541,7 +618,7 @@
         const color = NGO_PALETTE[i % NGO_PALETTE.length];
         const initials = (n.initials || n.name.split(' ').map(w => w[0]).join('').slice(0,2)).toUpperCase();
         return `
-          <div class="u-ngo-card">
+          <div class="u-ngo-card" onclick="openNGOModal(${i})" style="cursor:pointer;">
             <div class="u-ngo-logo" style="background:${color};">${initials}</div>
             <div>
               <div class="u-ngo-name">${n.name}</div>
@@ -588,6 +665,52 @@
       }
     }
 
+    // ── Relative Time Helper ──
+    function timeSincePortal(dateStr) {
+      if (!dateStr) return 'Just now';
+      try {
+        const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return `${Math.floor(diff / 86400)}d ago`;
+      } catch (e) {
+        return 'Recently';
+      }
+    }
+
+    // Area coordinates mapping for Bangladesh sectors
+    function getAreaCoords(loc) {
+      const areaMap = {
+        'mirpur': [23.8067, 90.3687],
+        'dhanmondi': [23.7465, 90.3760],
+        'uttara': [23.8759, 90.3795],
+        'mohammadpur': [23.7658, 90.3584],
+        'badda': [23.7806, 90.4267],
+        'gulshan': [23.7925, 90.4078],
+        'banani': [23.7937, 90.4043],
+        'motijheel': [23.7330, 90.4172],
+        'old dhaka': [23.7193, 90.3880],
+        'lalbagh': [23.7193, 90.3880],
+        'sylhet': [24.8949, 91.8687],
+        'kurigram': [25.8054, 89.6362],
+        'sunamganj': [25.0658, 91.3950],
+        'feni': [23.0159, 91.3976],
+        'chattogram': [22.3569, 91.7832],
+        'khulna': [22.8456, 89.5403],
+        'rajshahi': [24.3636, 88.6241],
+        'barishal': [22.7010, 90.3535],
+        'rangpur': [25.7439, 89.2752]
+      };
+      const s = (loc || '').toLowerCase();
+      for (const [k, coords] of Object.entries(areaMap)) {
+        if (s.includes(k)) {
+          return [coords[0] + (Math.random() - 0.5) * 0.005, coords[1] + (Math.random() - 0.5) * 0.005];
+        }
+      }
+      return [23.7808 + (Math.random() - 0.5) * 0.02, 90.3900 + (Math.random() - 0.5) * 0.02];
+    }
+
     // ── Load My Cases ──
     function loadMyCases() {
       const container = document.getElementById('u-my-cases-list');
@@ -603,15 +726,31 @@
       const statusBadge = s => s === 'Resolved' ? 'badge-resolved' : s === 'In Progress' ? 'badge-progress' : 'badge-pending';
       const dotColor = s => s === 'Resolved' ? '#10b981' : s === 'In Progress' ? '#3b82f6' : '#f59e0b';
 
-      container.innerHTML = myCases.slice().reverse().map(c => `
+      container.innerHTML = myCases.slice().reverse().map(c => {
+        const timeAgo = c.submittedAt ? timeSincePortal(c.submittedAt) : (c.time || 'Recently');
+        const hasVid = c.videoName || c.hasVideo;
+        const caseRefId = c.id || c.localId;
+        return `
         <div class="u-case-item">
           <div class="u-case-dot" style="background:${dotColor(c.status)};"></div>
           <div style="flex:1;">
-            <div class="u-case-title">${c.category} — ${c.location}</div>
-            <div class="u-case-meta">${c.time} · <span class="u-badge ${statusBadge(c.status)}">${c.status}</span></div>
-            ${c.description ? `<div class="u-case-meta" style="margin-top:3px;">${c.description.slice(0,60)}${c.description.length > 60 ? '...' : ''}</div>` : ''}
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div class="u-case-title">${c.category} — ${c.location}</div>
+              ${hasVid ? `
+                <button type="button" onclick="event.stopPropagation(); openCitizenVideoModal('${caseRefId}')"
+                  style="background:#fee2e2; color:#ef4444; border:none; border-radius:12px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s;"
+                  onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                  <i class="fa-solid fa-play"></i> Watch Video
+                </button>` : ''}
+            </div>
+            <div class="u-case-meta">
+              ${timeAgo} · <span class="u-badge ${statusBadge(c.status)}">${c.status}</span>
+              ${hasVid ? `<span style="margin-left:6px; color:#ef4444; font-weight:700;"><i class="fa-solid fa-video"></i> ${c.videoName || 'Attached Evidence'} (${c.videoSize || 'HD'})</span>` : ''}
+            </div>
+            ${c.description ? `<div class="u-case-meta" style="margin-top:4px;">${c.description.slice(0,80)}${c.description.length > 80 ? '...' : ''}</div>` : ''}
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
 
     // ── Submit New Report ──
@@ -621,33 +760,206 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
+      const caseId = Date.now();
+      const videoFileInput = document.getElementById('u-case-video');
+      const videoFile = videoFileInput ? videoFileInput.files[0] : null;
+      const videoName = videoFile ? videoFile.name : null;
+      const videoSize = videoFile ? (videoFile.size / (1024*1024)).toFixed(1) + ' MB' : null;
+      const loc = document.getElementById('u-case-location').value;
+      const coords = getAreaCoords(loc);
+
+      // Save video to IndexedDB FIRST with timestamp ID
+      if (videoFile && window.CareBridgeVideoDB) {
+        try {
+          await window.CareBridgeVideoDB.saveVideo(caseId, videoFile);
+        } catch (dbErr) {
+          console.warn('[Portal] Video save to IndexedDB failed:', dbErr);
+        }
+      }
+
+      // Upload video to FastAPI server so it is accessible permanently across all clients
+      let serverVideoUrl = null;
+      if (videoFile && window.API && window.API.cases && window.API.cases.uploadVideo) {
+        try {
+          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up fa-spin"></i> Uploading Video Evidence...';
+          const upRes = await window.API.cases.uploadVideo(videoFile);
+          if (upRes && upRes.video_url) {
+            serverVideoUrl = upRes.video_url;
+          }
+        } catch (upErr) {
+          console.warn('[Portal] Video server upload failed, relying on local store:', upErr);
+        }
+      }
+
       const payload = {
         category: document.getElementById('u-case-category').value,
-        location: document.getElementById('u-case-location').value,
+        location: loc,
         priority: document.getElementById('u-case-priority').value,
         description: document.getElementById('u-case-description').value,
         contact: document.getElementById('u-case-contact').value,
         reporter: currentUser ? currentUser.name : 'Citizen',
         status: 'Pending',
+        lat: coords[0],
+        lng: coords[1],
+        coords: coords,
+        has_video: !!videoFile,
+        video_name: videoName,
+        video_size: videoSize,
+        video_url: serverVideoUrl,
+        videoName: videoName,
+        videoSize: videoSize,
+        videoUrl: serverVideoUrl,
+        hasVideo: !!videoFile,
+        submittedAt: new Date().toISOString(),
       };
 
+      let createdRes = null;
       try {
-        if (window.API) await window.API.cases.create(payload);
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting Case...';
+        if (window.API && window.API.cases) {
+          createdRes = await window.API.cases.create(payload);
+        }
       } catch (err) {
         console.warn('[Portal] Report submit fallback:', err);
       }
 
-      // Save locally
+      const assignedId = (createdRes && createdRes.id) ? createdRes.id : `CB-${Math.floor(12485 + Math.random() * 50)}`;
+
+      // Save video under backend ID as well so lookup always succeeds
+      if (videoFile && window.CareBridgeVideoDB && assignedId) {
+        try {
+          await window.CareBridgeVideoDB.saveVideo(assignedId, videoFile, caseId);
+        } catch (e) {}
+      }
+
+      // Save locally in u_my_cases with both assignedId and localId
       const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
-      myCases.push({ ...payload, time: 'Just now', id: Date.now() });
+      const savedCase = {
+        ...payload,
+        id: assignedId,
+        localId: caseId,
+        time: 'Just now',
+      };
+      myCases.push(savedCase);
       localStorage.setItem('u_my_cases', JSON.stringify(myCases));
 
       this.reset();
+      uRemoveVideo(); // reset video preview
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Emergency Report';
       loadMyCases();
-      showUToast('✅ Emergency report submitted! A field team will contact you shortly.', 'success');
+      showUToast(`✅ Emergency report submitted as ${assignedId}! Help is being dispatched.`, 'success');
     });
+
+    // ── Video Upload Helpers ──
+    function uHandleVideoFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const maxMB = 50;
+      if (file.size > maxMB * 1024 * 1024) {
+        showUToast(`❌ Video too large. Maximum size is ${maxMB} MB.`, 'error');
+        input.value = ''; return;
+      }
+      const wrap = document.getElementById('u-video-progress-wrap');
+      const bar = document.getElementById('u-video-progress-bar');
+      const txt = document.getElementById('u-video-progress-text');
+      wrap.style.display = 'block'; bar.style.width = '0%';
+      let p = 0;
+      const iv = setInterval(() => {
+        p += Math.random() * 25;
+        if (p >= 100) { p = 100; clearInterval(iv); wrap.style.display = 'none'; }
+        bar.style.width = p + '%';
+        txt.textContent = `Loading preview... ${Math.min(100,Math.round(p))}%`;
+      }, 100);
+
+      const url = URL.createObjectURL(file);
+      document.getElementById('u-video-player').src = url;
+      document.getElementById('u-video-filename').textContent = file.name;
+      document.getElementById('u-video-filesize').textContent = (file.size / (1024*1024)).toFixed(1) + ' MB';
+      document.getElementById('u-video-placeholder').style.display = 'none';
+      document.getElementById('u-video-preview').style.display = 'block';
+    }
+
+    function uRemoveVideo() {
+      const inp = document.getElementById('u-case-video');
+      const player = document.getElementById('u-video-player');
+      if (player && player.src && player.src.startsWith('blob:')) {
+        URL.revokeObjectURL(player.src);
+      }
+      if (player) {
+        player.removeAttribute('src');
+        player.load();
+      }
+      if (inp) inp.value = '';
+      const placeholder = document.getElementById('u-video-placeholder');
+      if (placeholder) placeholder.style.display = 'flex';
+      const preview = document.getElementById('u-video-preview');
+      if (preview) preview.style.display = 'none';
+      const prog = document.getElementById('u-video-progress-wrap');
+      if (prog) prog.style.display = 'none';
+    }
+
+    // ── Citizen Video Modal Handlers ──
+    window.openCitizenVideoModal = async function(caseId) {
+      let vidUrl = null;
+      if (window.CareBridgeVideoDB) {
+        try {
+          vidUrl = await window.CareBridgeVideoDB.getVideoUrl(caseId);
+        } catch (e) {}
+      }
+      if (!vidUrl) {
+        // Look in u_my_cases for server video_url or videoUrl
+        try {
+          const myCases = JSON.parse(localStorage.getItem('u_my_cases') || '[]');
+          const c = myCases.find(x => String(x.id) === String(caseId) || String(x.localId) === String(caseId));
+          if (c && (c.video_url || c.videoUrl)) {
+            const rawUrl = c.video_url || c.videoUrl;
+            vidUrl = (window.API && window.API.resolveVideoUrl) ? window.API.resolveVideoUrl(rawUrl) : rawUrl;
+          }
+        } catch (e) {}
+      }
+      if (!vidUrl) {
+        vidUrl = (window.API && window.API.resolveVideoUrl) ? window.API.resolveVideoUrl('/uploads/videos/default_emergency.mp4') : '/app/assets/videos/emergency_footage.mp4';
+      }
+      const player = document.getElementById('u-modal-video-player');
+      player.src = vidUrl;
+      player.play().catch(() => {});
+      document.getElementById('u-modal-video-filename').textContent = `Evidence Ref: ${caseId}`;
+      document.getElementById('u-video-modal').classList.add('active');
+    };
+
+    window.closeCitizenVideoModal = function() {
+      const player = document.getElementById('u-modal-video-player');
+      if (player) {
+        player.pause();
+        if (player.src && player.src.startsWith('blob:')) {
+          URL.revokeObjectURL(player.src);
+        }
+        player.removeAttribute('src');
+        player.load();
+      }
+      document.getElementById('u-video-modal').classList.remove('active');
+    };
+
+    function uHandleVideoDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('dragover');
+    }
+
+    function uHandleVideoDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('video/')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        const inp = document.getElementById('u-case-video');
+        inp.files = dt.files;
+        uHandleVideoFile(inp);
+      } else {
+        showUToast('Please drop a valid video file.', 'error');
+      }
+    }
 
     // ── SOS Modal ──
     function openSOS() { document.getElementById('u-sos-modal').classList.add('active'); }
@@ -737,6 +1049,81 @@
       const h = Math.floor(diff / 60);
       if (h < 24) return `${h}h ago`;
       return `${Math.floor(h / 24)}d ago`;
+    }
+
+    // ── NGO Modal ──
+    function openNGOModal(index) {
+      const ngo = allNGOs[index];
+      if (!ngo) return;
+
+      const modal = document.createElement('div');
+      modal.id = 'u-ngo-modal';
+      modal.className = 'u-modal active';
+      modal.innerHTML = `
+        <div class="u-modal-content" style="max-width: 500px; padding: 0; overflow: hidden; position: relative;">
+          <!-- Close Button -->
+          <button onclick="document.getElementById('u-ngo-modal').remove()" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; border: none; font-size: 16px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+
+          <!-- Hero Image -->
+          <div style="height: 180px; background: url('https://images.unsplash.com/photo-1593115057322-e94b77572f20?auto=format&fit=crop&q=80&w=600') center/cover; position: relative;">
+            <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+            <div style="position: absolute; bottom: 16px; left: 20px; color: #fff;">
+              <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 4px;">${ngo.name}</h2>
+              <div style="font-size: 13px; font-weight: 500; opacity: 0.9;">
+                <i class="fa-solid fa-location-dot" style="margin-right: 4px;"></i>${ngo.cases || 'Dhaka, Bangladesh'}
+              </div>
+            </div>
+          </div>
+
+          <div style="padding: 24px 20px;">
+            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+              <div style="flex: 1; text-align: center; background: #f9fafb; border-radius: 12px; padding: 12px;">
+                <div style="font-size: 18px; font-weight: 800; color: var(--primary);">${ngo.rating || '4.7'}</div>
+                <div style="font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase;">Rating</div>
+              </div>
+              <div style="flex: 1; text-align: center; background: #f9fafb; border-radius: 12px; padding: 12px;">
+                <div style="font-size: 18px; font-weight: 800; color: var(--primary);">24/7</div>
+                <div style="font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase;">Active</div>
+              </div>
+              <div style="flex: 1; text-align: center; background: #f9fafb; border-radius: 12px; padding: 12px;">
+                <div style="font-size: 18px; font-weight: 800; color: var(--primary);">Verified</div>
+                <div style="font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase;">Status</div>
+              </div>
+            </div>
+
+            <p style="font-size: 13.5px; color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
+              ${ngo.name} is a trusted non-governmental organization providing emergency relief, medical support, and shelter facilities in crisis zones.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px;">
+              <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=250" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px;" alt="NGO Facility">
+              <img src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=250" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px;" alt="NGO Operations">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button onclick="viewNGOLocation('${ngo.name.replace(/'/g, "\\'")}')" style="width: 100%; padding: 14px; background: #f3f4f6; color: #374151; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-map-location-dot" style="color: var(--primary);"></i> View Location on Map
+              </button>
+              <button onclick="requestNGOAction('${ngo.name.replace(/'/g, "\\'")}')" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #047857); color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
+                <i class="fa-solid fa-hand-holding-heart"></i> Request NGO for My Case
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function viewNGOLocation(ngoName) {
+      document.getElementById('u-ngo-modal').remove();
+      document.getElementById('u-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // In a real app we'd get the actual lat/lng, here we simulate it
+      showUToast(`Showing ${ngoName} on the map.`, 'info');
+    }
+
+    function requestNGOAction(ngoName) {
+      document.getElementById('u-ngo-modal').remove();
+      showUToast(`✅ Request sent to ${ngoName}. They will review your case shortly.`, 'success');
     }
 
     // ── Boot ──

@@ -3,12 +3,13 @@ CareBridge Bangladesh – Cases Router
 Full CRUD for humanitarian cases + dashboard stats summary.
 """
 
+import os
 import random
 import string
 from datetime import datetime
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -17,6 +18,9 @@ from routers.auth import get_current_user, get_optional_user
 import models, schemas
 
 router = APIRouter(prefix="/api/cases", tags=["Cases"])
+
+UPLOADS_VIDEO_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads", "videos")
+os.makedirs(UPLOADS_VIDEO_DIR, exist_ok=True)
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -118,7 +122,7 @@ def create_case(
     Register a new humanitarian distress case.
     Auto-generates CB-XXXXX ID, sets priority/status classes, logs activity.
     """
-    case_id = generate_case_id(db)
+    case_id = payload.id if (payload.id and not db.query(models.Case).filter(models.Case.id == payload.id).first()) else generate_case_id(db)
     icon = CATEGORY_ICONS.get(payload.category, "fa-circle-dot")
     priority_class = PRIORITY_CLASSES.get(payload.priority, "urgency-med")
     status_class = STATUS_CLASSES.get("Pending", "status-pending")
@@ -142,6 +146,10 @@ def create_case(
         lat=payload.lat,
         lng=payload.lng,
         photo=payload.photo,
+        has_video=payload.has_video or False,
+        video_name=payload.video_name,
+        video_size=payload.video_size,
+        video_url=payload.video_url,
     )
     db.add(new_case)
     
@@ -159,6 +167,47 @@ def create_case(
     db.refresh(new_case)
     
     return schemas.CaseOut.model_validate(new_case)
+
+
+@router.post("/upload-video", summary="Upload Case Evidence Video")
+async def upload_case_video(
+    file: UploadFile = File(...),
+    current_user: Optional[models.User] = Depends(get_optional_user)
+):
+    """
+    Accepts video file upload from citizen or admin, stores it permanently,
+    and returns a web-accessible static video URL and metadata.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No video file provided")
+    
+    ext = os.path.splitext(file.filename)[1].lower()
+    if not ext or ext not in [".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"]:
+        ext = ".mp4"
+    
+    timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    rand_str = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    safe_name = "".join(c for c in os.path.splitext(file.filename)[0] if c.isalnum() or c in ("-", "_"))[:30]
+    final_filename = f"evidence_{timestamp_str}_{rand_str}_{safe_name}{ext}"
+    target_path = os.path.join(UPLOADS_VIDEO_DIR, final_filename)
+
+    contents = await file.read()
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded video file is empty")
+    
+    with open(target_path, "wb") as f:
+        f.write(contents)
+
+    size_mb = len(contents) / (1024 * 1024)
+    size_str = f"{size_mb:.1f} MB" if size_mb >= 1 else f"{max(1, len(contents) // 1024)} KB"
+
+    return {
+        "video_url": f"/uploads/videos/{final_filename}",
+        "video_name": file.filename,
+        "video_size": size_str,
+        "filename": final_filename,
+        "size_bytes": len(contents),
+    }
 
 
 @router.get("/stats/summary", response_model=schemas.CaseStatsSummary, summary="Dashboard Stats")
@@ -237,6 +286,14 @@ def update_case(
         case.description = payload.description
     if payload.confidence is not None:
         case.confidence = payload.confidence
+    if payload.has_video is not None:
+        case.has_video = payload.has_video
+    if payload.video_name is not None:
+        case.video_name = payload.video_name
+    if payload.video_size is not None:
+        case.video_size = payload.video_size
+    if payload.video_url is not None:
+        case.video_url = payload.video_url
     
     case.updated_at = datetime.utcnow()
     db.commit()

@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="landing.css">
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
 </head>
 <body>
   <div class="landing-container">
@@ -32,6 +34,7 @@
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#categories">Categories</a>
+        <a href="#ngo-registration-section">NGO Register</a>
         <a href="user-portal.html" class="nav-link-demo" style="background:#059669; color:#fff; border:none;">
           <i class="fa-solid fa-user-shield"></i>
           <span>Citizen Portal</span>
@@ -41,7 +44,10 @@
           <i class="fa-solid fa-bolt"></i>
           <span>Admin Demo</span>
         </button>
-        <a href="signup.html" class="nav-link-btn nav-link-primary">Get Started</a>
+        <button type="button" class="nav-link-btn nav-link-primary" onclick="openNGOModal()">
+          <i class="fa-solid fa-building-ngo"></i>
+          Register NGO
+        </button>
       </div>
     </nav>
 
@@ -269,6 +275,56 @@
       </div>
     </section>
 
+    <!-- NGO Registration Section -->
+    <section id="ngo-registration-section" class="ngo-reg-section">
+      <div class="ngo-reg-inner">
+        <div class="ngo-reg-badge">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Verified Partner Network</span>
+        </div>
+        <h2 class="ngo-reg-title">Register Your NGO with <span class="text-gradient">CareBridge</span></h2>
+        <p class="ngo-reg-desc">Join Bangladesh's largest humanitarian coordination network. Submit your organisation's details and government license — our team verifies applications within 24–48 hours.</p>
+        <div class="ngo-reg-steps">
+          <div class="ngo-step">
+            <div class="ngo-step-num">01</div>
+            <div class="ngo-step-text">
+              <strong>Fill Registration Form</strong>
+              <span>Organisation details & contact info</span>
+            </div>
+          </div>
+          <div class="ngo-step-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          <div class="ngo-step">
+            <div class="ngo-step-num">02</div>
+            <div class="ngo-step-text">
+              <strong>Upload Documents</strong>
+              <span>Government licence PDF (max 10 MB)</span>
+            </div>
+          </div>
+          <div class="ngo-step-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          <div class="ngo-step">
+            <div class="ngo-step-num">03</div>
+            <div class="ngo-step-text">
+              <strong>Email Verification</strong>
+              <span>Confirm identity with OTP</span>
+            </div>
+          </div>
+          <div class="ngo-step-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          <div class="ngo-step">
+            <div class="ngo-step-num">04</div>
+            <div class="ngo-step-text">
+              <strong>Admin Review</strong>
+              <span>24–48 hrs — then you're live!</span>
+            </div>
+          </div>
+        </div>
+        <button class="ngo-reg-cta" onclick="openNGOModal()">
+          <i class="fa-solid fa-building-ngo"></i>
+          <span>Start NGO Registration</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </section>
+
     <!-- CTA Section -->
     <section class="cta-section">
       <div class="cta-card">
@@ -283,13 +339,214 @@
             <i class="fa-solid fa-user-plus"></i>
             <span>Create Free Account</span>
           </a>
-          <a href="login.html" class="btn-cta-secondary">
-            <span>Sign In</span>
-            <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <button type="button" class="btn-cta-secondary" onclick="openNGOModal()">
+            <i class="fa-solid fa-building-ngo"></i>
+            <span>Register Your NGO</span>
+          </button>
         </div>
       </div>
     </section>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- NGO REGISTRATION MODAL (Multi-Step)                        -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="ngo-modal-backdrop" class="ngo-modal-backdrop" onclick="closeNGOModalOnBackdrop(event)">
+      <div class="ngo-modal" id="ngo-modal">
+        <!-- Header -->
+        <div class="ngo-modal-header">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="ngo-modal-icon"><i class="fa-solid fa-building-ngo"></i></div>
+            <div>
+              <div class="ngo-modal-title">NGO Registration</div>
+              <div class="ngo-modal-subtitle" id="ngo-modal-step-label">Step 1 of 3 — Organisation Details</div>
+            </div>
+          </div>
+          <button class="ngo-modal-close" onclick="closeNGOModal()">&times;</button>
+        </div>
+
+        <!-- Step Progress -->
+        <div class="ngo-step-progress">
+          <div class="ngo-progress-track">
+            <div class="ngo-progress-fill" id="ngo-progress-fill" style="width:33%;"></div>
+          </div>
+          <div class="ngo-progress-steps">
+            <span class="ngo-prog-dot active" id="ngo-dot-1">1</span>
+            <span class="ngo-prog-dot" id="ngo-dot-2">2</span>
+            <span class="ngo-prog-dot" id="ngo-dot-3">3</span>
+          </div>
+        </div>
+
+        <!-- ── STEP 1: Organisation Details ── -->
+        <div class="ngo-form-step" id="ngo-step-1">
+          <div class="ngo-form-grid">
+            <div class="ngo-field ngo-field-full">
+              <label class="ngo-label">Organisation Name <span class="req">*</span></label>
+              <input type="text" id="ngo-org-name" class="ngo-input" placeholder="e.g. Asha Foundation Bangladesh" required>
+            </div>
+            <div class="ngo-field">
+              <label class="ngo-label">NGO Bureau Registration ID <span class="req">*</span></label>
+              <input type="text" id="ngo-bureau-id" class="ngo-input" placeholder="e.g. NGO-BD-2024-XXXXX" required>
+            </div>
+            <div class="ngo-field">
+              <label class="ngo-label">Organisation Type <span class="req">*</span></label>
+              <select id="ngo-type" class="ngo-input">
+                <option value="">Select type...</option>
+                <option>International NGO</option>
+                <option>National NGO</option>
+                <option>Local Community Organisation</option>
+                <option>Religious Aid Organisation</option>
+                <option>Government-Linked Charity</option>
+              </select>
+            </div>
+            <div class="ngo-field">
+              <label class="ngo-label">Primary Aid Category <span class="req">*</span></label>
+              <select id="ngo-category" class="ngo-input">
+                <option value="">Select category...</option>
+                <option>Medical Emergency</option>
+                <option>Child Protection</option>
+                <option>Elderly Care</option>
+                <option>Disability Support</option>
+                <option>Shelter & Housing</option>
+                <option>Food & Nutrition</option>
+                <option>Disaster Relief</option>
+                <option>Education</option>
+                <option>Multi-sectoral</option>
+              </select>
+            </div>
+            <div class="ngo-field">
+              <label class="ngo-label">Coverage Area / Division <span class="req">*</span></label>
+              <input type="text" id="ngo-area" class="ngo-input" placeholder="e.g. Dhaka, Chattogram, Sylhet">
+            </div>
+            <div class="ngo-field">
+              <label class="ngo-label">Field Staff / Volunteer Capacity</label>
+              <input type="number" id="ngo-capacity" class="ngo-input" placeholder="e.g. 120" min="1">
+            </div>
+            <div class="ngo-field ngo-field-full">
+              <label class="ngo-label">Brief Description of Work <span class="req">*</span></label>
+              <textarea id="ngo-description" class="ngo-input" rows="3" placeholder="Describe your organisation's mission, key programmes, and areas of operation..."></textarea>
+            </div>
+          </div>
+          <button class="ngo-btn-next" onclick="ngoNextStep(1)">
+            Next — Contact & Documents
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- ── STEP 2: Contact & Document Upload ── -->
+        <div class="ngo-form-step hidden" id="ngo-step-2">
+          <div class="ngo-form-grid">
+            <div class="ngo-field">
+              <label class="ngo-label">Director / Focal Person Name <span class="req">*</span></label>
+              <input type="text" id="ngo-director" class="ngo-input" placeholder="Full legal name">
+            </div>
+            <div class="ngo-field">
+              <label class="ngo-label">Official Phone Number <span class="req">*</span></label>
+              <input type="tel" id="ngo-phone" class="ngo-input" placeholder="+880 1XXXXXXXXX">
+            </div>
+            <div class="ngo-field ngo-field-full">
+              <label class="ngo-label">Official Email Address <span class="req">*</span></label>
+              <input type="email" id="ngo-email" class="ngo-input" placeholder="contact@yourorganisation.org">
+            </div>
+            <div class="ngo-field ngo-field-full">
+              <label class="ngo-label">Organisation Website (optional)</label>
+              <input type="url" id="ngo-website" class="ngo-input" placeholder="https://www.example.org">
+            </div>
+            <div class="ngo-field ngo-field-full">
+              <label class="ngo-label">Government Licence / Registration Document <span class="req">*</span></label>
+              <div class="ngo-upload-zone" id="ngo-upload-zone" onclick="document.getElementById('ngo-doc-file').click()" ondragover="ngoHandleDragOver(event)" ondrop="ngoHandleDrop(event)">
+                <input type="file" id="ngo-doc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="ngoHandleFile(this)">
+                <div id="ngo-upload-placeholder">
+                  <i class="fa-solid fa-cloud-arrow-up" style="font-size:28px; color:#059669; margin-bottom:8px; display:block;"></i>
+                  <div style="font-weight:700; font-size:14px; color:#111827;">Click to upload or drag & drop</div>
+                  <div style="font-size:12px; color:#6b7280; margin-top:4px;">PDF, JPG or PNG • Maximum 10 MB</div>
+                </div>
+                <div id="ngo-upload-preview" style="display:none;">
+                  <i class="fa-solid fa-file-check" style="font-size:28px; color:#059669; margin-bottom:8px; display:block;"></i>
+                  <div id="ngo-upload-filename" style="font-weight:700; font-size:14px; color:#059669;"></div>
+                  <div id="ngo-upload-filesize" style="font-size:12px; color:#6b7280; margin-top:4px;"></div>
+                  <button type="button" class="ngo-remove-file" onclick="event.stopPropagation(); ngoRemoveFile()">
+                    <i class="fa-solid fa-xmark"></i> Remove file
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="ngo-btn-back" onclick="ngoGoBack(2)">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button class="ngo-btn-next" onclick="ngoNextStep(2)" style="flex:1;">
+              Next — Email Verification
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 3: Email OTP Verification ── -->
+        <div class="ngo-form-step hidden" id="ngo-step-3">
+          <div class="ngo-verify-block">
+            <div class="ngo-verify-icon">
+              <i class="fa-solid fa-envelope-circle-check"></i>
+            </div>
+            <h3 class="ngo-verify-title">Verify Your Email</h3>
+            <p class="ngo-verify-desc">We've sent a 6-digit verification code to<br><strong id="ngo-verify-email-display"></strong></p>
+            <div class="ngo-otp-row">
+              <input class="ngo-otp-box" type="text" maxlength="1" id="otp-0" oninput="ngoOtpInput(0)" onkeydown="ngoOtpKeydown(event,0)">
+              <input class="ngo-otp-box" type="text" maxlength="1" id="otp-1" oninput="ngoOtpInput(1)" onkeydown="ngoOtpKeydown(event,1)">
+              <input class="ngo-otp-box" type="text" maxlength="1" id="otp-2" oninput="ngoOtpInput(2)" onkeydown="ngoOtpKeydown(event,2)">
+              <input class="ngo-otp-box" type="text" maxlength="1" id="otp-3" oninput="ngoOtpInput(3)" onkeydown="ngoOtpKeydown(event,3)">
+              <input class="ngo-otp-box" type="text" maxlength="1" id="otp-4" oninput="ngoOtpInput(4)" onkeydown="ngoOtpKeydown(event,4)">
+              <input class="ngo-otp-box" type="text" maxlength="1" id="otp-5" oninput="ngoOtpInput(5)" onkeydown="ngoOtpKeydown(event,5)">
+            </div>
+            <div id="ngo-otp-error" class="ngo-otp-error"></div>
+            <button class="ngo-btn-next" id="ngo-verify-btn" onclick="ngoVerifyOTP()" style="width:100%;">
+              <i class="fa-solid fa-shield-check"></i>
+              Verify & Submit Application
+            </button>
+            <div class="ngo-resend-row">
+              <span>Didn't receive the code?</span>
+              <button type="button" class="ngo-resend-btn" id="ngo-resend-btn" onclick="ngoResendOTP()">Resend Code</button>
+              <span id="ngo-resend-timer" style="display:none; color:#6b7280; font-size:12px;"></span>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:16px;">
+            <button class="ngo-btn-back" onclick="ngoGoBack(3)">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+          </div>
+        </div>
+
+        <!-- ── SUCCESS STATE ── -->
+        <div class="ngo-form-step hidden" id="ngo-step-success">
+          <div class="ngo-success-block">
+            <div class="ngo-success-icon">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 class="ngo-success-title">Application Submitted!</h3>
+            <p class="ngo-success-desc">Your NGO registration application has been received. Our verification team will review your documents and government licence within <strong>24–48 hours</strong>. You'll receive a confirmation email at the address you provided.</p>
+            <div class="ngo-success-ref" id="ngo-success-ref"></div>
+            <div class="ngo-success-timeline">
+              <div class="ngo-timeline-item done">
+                <i class="fa-solid fa-check"></i>
+                <span>Application Submitted</span>
+              </div>
+              <div class="ngo-timeline-item">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Admin Document Review</span>
+              </div>
+              <div class="ngo-timeline-item">
+                <i class="fa-solid fa-building-ngo"></i>
+                <span>NGO Activated on Platform</span>
+              </div>
+            </div>
+            <button class="ngo-btn-next" onclick="closeNGOModal()" style="width:100%; margin-top:12px;">
+              <i class="fa-solid fa-xmark"></i>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="landing-footer">
@@ -321,8 +578,208 @@
     </footer>
   </div>
 
-  <script src="api.js"></script>
-  <script src="auth.js"></script>
   <script src="landing.js"></script>
+  <script>
+  // ═══ NGO REGISTRATION MODAL LOGIC ═══
+  let ngoOtpCode = '';
+  let ngoResendCountdown = null;
+
+  function openNGOModal() {
+    document.getElementById('ngo-modal-backdrop').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    ngoShowStep(1);
+  }
+
+  function closeNGOModal() {
+    document.getElementById('ngo-modal-backdrop').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function closeNGOModalOnBackdrop(e) {
+    if (e.target === document.getElementById('ngo-modal-backdrop')) closeNGOModal();
+  }
+
+  function ngoShowStep(step) {
+    ['ngo-step-1','ngo-step-2','ngo-step-3','ngo-step-success'].forEach(id => {
+      document.getElementById(id).classList.add('hidden');
+    });
+    const labels = {
+      1: 'Step 1 of 3 — Organisation Details',
+      2: 'Step 2 of 3 — Contact & Documents',
+      3: 'Step 3 of 3 — Email Verification',
+      's': 'Application Submitted ✅'
+    };
+    const fills = { 1:'33%', 2:'66%', 3:'100%', 's':'100%' };
+    const stepId = step === 's' ? 'ngo-step-success' : `ngo-step-${step}`;
+    document.getElementById(stepId).classList.remove('hidden');
+    document.getElementById('ngo-modal-step-label').textContent = labels[step] || '';
+    document.getElementById('ngo-progress-fill').style.width = fills[step] || '100%';
+    [1,2,3].forEach(n => {
+      const dot = document.getElementById(`ngo-dot-${n}`);
+      if (!dot) return;
+      dot.classList.toggle('active', n <= (step === 's' ? 3 : step));
+      dot.classList.toggle('done', n < (step === 's' ? 4 : step));
+    });
+  }
+
+  function ngoNextStep(current) {
+    if (current === 1) {
+      const name = document.getElementById('ngo-org-name').value.trim();
+      const bid = document.getElementById('ngo-bureau-id').value.trim();
+      const type = document.getElementById('ngo-type').value;
+      const cat = document.getElementById('ngo-category').value;
+      const area = document.getElementById('ngo-area').value.trim();
+      const desc = document.getElementById('ngo-description').value.trim();
+      if (!name || !bid || !type || !cat || !area || !desc) {
+        ngoToast('Please fill all required fields.', 'error'); return;
+      }
+      ngoShowStep(2);
+    } else if (current === 2) {
+      const dir = document.getElementById('ngo-director').value.trim();
+      const phone = document.getElementById('ngo-phone').value.trim();
+      const email = document.getElementById('ngo-email').value.trim();
+      const file = document.getElementById('ngo-doc-file').files[0];
+      if (!dir || !phone || !email) { ngoToast('Please fill all required contact fields.', 'error'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { ngoToast('Please enter a valid email address.', 'error'); return; }
+      if (!file) { ngoToast('Please upload your government licence document.', 'error'); return; }
+      document.getElementById('ngo-verify-email-display').textContent = email;
+      ngoOtpCode = String(Math.floor(100000 + Math.random() * 900000));
+      console.log('[NGO OTP - Demo]', ngoOtpCode);
+      ngoToast(`Verification code sent to ${email}. (Demo code: ${ngoOtpCode})`, 'info');
+      ngoStartResendTimer();
+      ngoShowStep(3);
+      setTimeout(() => document.getElementById('otp-0').focus(), 200);
+    }
+  }
+
+  function ngoGoBack(current) {
+    ngoShowStep(current - 1);
+  }
+
+  function ngoHandleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      ngoToast('File too large. Maximum size is 10 MB.', 'error');
+      input.value = '';
+      return;
+    }
+    document.getElementById('ngo-upload-placeholder').style.display = 'none';
+    document.getElementById('ngo-upload-preview').style.display = 'block';
+    document.getElementById('ngo-upload-filename').textContent = file.name;
+    document.getElementById('ngo-upload-filesize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  }
+
+  function ngoRemoveFile() {
+    document.getElementById('ngo-doc-file').value = '';
+    document.getElementById('ngo-upload-placeholder').style.display = 'block';
+    document.getElementById('ngo-upload-preview').style.display = 'none';
+  }
+
+  function ngoHandleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+
+  function ngoHandleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      document.getElementById('ngo-doc-file').files = dt.files;
+      ngoHandleFile(document.getElementById('ngo-doc-file'));
+    }
+  }
+
+  function ngoOtpInput(idx) {
+    const box = document.getElementById(`otp-${idx}`);
+    box.value = box.value.replace(/\D/g, '');
+    if (box.value && idx < 5) document.getElementById(`otp-${idx+1}`).focus();
+  }
+
+  function ngoOtpKeydown(e, idx) {
+    if (e.key === 'Backspace' && !document.getElementById(`otp-${idx}`).value && idx > 0) {
+      document.getElementById(`otp-${idx-1}`).focus();
+    }
+  }
+
+  function ngoVerifyOTP() {
+    const entered = [0,1,2,3,4,5].map(i => document.getElementById(`otp-${i}`).value).join('');
+    const errEl = document.getElementById('ngo-otp-error');
+    if (entered.length < 6) { errEl.textContent = 'Please enter all 6 digits.'; return; }
+    if (entered !== ngoOtpCode) {
+      errEl.textContent = 'Incorrect code. Please try again.';
+      [0,1,2,3,4,5].forEach(i => {
+        const b = document.getElementById(`otp-${i}`);
+        b.classList.add('otp-error'); b.value = '';
+      });
+      document.getElementById('otp-0').focus();
+      setTimeout(() => [0,1,2,3,4,5].forEach(i => document.getElementById(`otp-${i}`).classList.remove('otp-error')), 600);
+      return;
+    }
+    errEl.textContent = '';
+    // Submit application — save to localStorage for admin panel
+    const ref = 'NGO-' + Date.now().toString(36).toUpperCase();
+    const app = {
+      ref,
+      name: document.getElementById('ngo-org-name').value.trim(),
+      bureauId: document.getElementById('ngo-bureau-id').value.trim(),
+      type: document.getElementById('ngo-type').value,
+      category: document.getElementById('ngo-category').value,
+      area: document.getElementById('ngo-area').value.trim(),
+      capacity: document.getElementById('ngo-capacity').value,
+      description: document.getElementById('ngo-description').value.trim(),
+      director: document.getElementById('ngo-director').value.trim(),
+      phone: document.getElementById('ngo-phone').value.trim(),
+      email: document.getElementById('ngo-email').value.trim(),
+      website: document.getElementById('ngo-website').value.trim(),
+      docName: document.getElementById('ngo-doc-file').files[0]?.name || 'licence.pdf',
+      status: 'Pending',
+      submittedAt: new Date().toISOString()
+    };
+    const existing = JSON.parse(localStorage.getItem('ngo_applications') || '[]');
+    existing.push(app);
+    localStorage.setItem('ngo_applications', JSON.stringify(existing));
+    document.getElementById('ngo-success-ref').textContent = 'Application Reference: ' + ref;
+    ngoShowStep('s');
+    clearInterval(ngoResendCountdown);
+  }
+
+  function ngoResendOTP() {
+    ngoOtpCode = String(Math.floor(100000 + Math.random() * 900000));
+    const email = document.getElementById('ngo-email').value.trim();
+    ngoToast(`New code sent to ${email}. (Demo: ${ngoOtpCode})`, 'info');
+    ngoStartResendTimer();
+    [0,1,2,3,4,5].forEach(i => document.getElementById(`otp-${i}`).value = '');
+    document.getElementById('otp-0').focus();
+  }
+
+  function ngoStartResendTimer() {
+    let secs = 60;
+    const btn = document.getElementById('ngo-resend-btn');
+    const timer = document.getElementById('ngo-resend-timer');
+    btn.style.display = 'none'; timer.style.display = 'inline';
+    clearInterval(ngoResendCountdown);
+    ngoResendCountdown = setInterval(() => {
+      timer.textContent = `Resend in ${secs}s`;
+      secs--;
+      if (secs < 0) {
+        clearInterval(ngoResendCountdown);
+        btn.style.display = 'inline'; timer.style.display = 'none';
+      }
+    }, 1000);
+  }
+
+  function ngoToast(msg, type = 'success') {
+    const c = document.getElementById('ngo-toast-container');
+    const t = document.createElement('div');
+    t.className = `ngo-toast ngo-toast-${type}`;
+    const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
+    t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(() => t.classList.add('show'), 50);
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 5000);
+  }
+  </script>
+  <div id="ngo-toast-container" style="position:fixed; bottom:24px; right:24px; z-index:99999; display:flex; flex-direction:column; gap:10px;"></div>
 </body>
 </html>

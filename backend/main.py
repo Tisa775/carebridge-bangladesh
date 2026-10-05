@@ -84,6 +84,11 @@ def health_check():
         "docs": "/docs",
     }
 
+# ─── Static Uploads & Media Files ─────────────────────────────────────────────
+UPLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+os.makedirs(os.path.join(UPLOADS_DIR, "videos"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+
 # ─── Static Frontend Files ────────────────────────────────────────────────────
 # Mount the parent frontend directory at /app so all HTML/CSS/JS is served.
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")

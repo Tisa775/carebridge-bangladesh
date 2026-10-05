@@ -18,8 +18,17 @@ $uvicornExe = Join-Path $workdir "backend\.venv\Scripts\uvicorn.exe"
 if (-not (Test-Path $pythonExe)) {
     Write-Host "[1/3] Setting up Python virtual environment..." -ForegroundColor Yellow
     Set-Location (Join-Path $workdir "backend")
-    uv venv
-    uv pip install -r requirements.txt
+    $localPy = "C:\Users\argho\Python311\python.exe"
+    if (Test-Path $localPy) {
+        & $localPy -m venv .venv
+        & .\.venv\Scripts\pip install -r requirements.txt
+    } elseif (Get-Command python -ErrorAction SilentlyContinue) {
+        python -m venv .venv
+        & .\.venv\Scripts\pip install -r requirements.txt
+    } else {
+        uv venv
+        uv pip install -r requirements.txt
+    }
     Set-Location $workdir
 } else {
     Write-Host "[1/3] Python virtual environment detected." -ForegroundColor Green

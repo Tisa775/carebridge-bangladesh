@@ -148,6 +148,30 @@ const CAREBRIDGE_API = (() => {
     async stats() {
       return await apiGet('/api/cases/stats/summary');
     },
+    async uploadVideo(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = getToken();
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`${BASE_URL}/api/cases/upload-video`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Video upload failed: ${res.status}`);
+      }
+      return await res.json();
+    },
+    resolveVideoUrl(url) {
+      if (!url) return null;
+      if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      return `${BASE_URL.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
+    },
   };
 
   // ─── NGOS ──────────────────────────────────────────────────────────────────
@@ -260,6 +284,7 @@ const CAREBRIDGE_API = (() => {
   // ─── Public API ────────────────────────────────────────────────────────────
   return {
     BASE_URL,
+    resolveVideoUrl: cases.resolveVideoUrl,
     checkHealth,
     auth,
     cases,

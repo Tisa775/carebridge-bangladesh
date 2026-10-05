@@ -955,7 +955,7 @@
       <!-- VIEW: HEATMAP                                                      -->
       <!-- ================================================================== -->
       <div id="view-heatmap" class="view-section dashboard-content">
-        <div class="panel-card" style="padding:24px;">
+        <div class="panel-card" style="padding:24px; margin-bottom:20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div>
               <h2 style="font-size:20px; font-weight:800;">🔥 Dhaka Crisis Density Heatmap</h2>
@@ -966,40 +966,103 @@
             </span>
           </div>
           <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
-            <div style="background:#111827; border-radius:12px; padding:20px; color:#fff; min-height:300px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
-              <div style="position:absolute; inset:0; background: radial-gradient(circle at 30% 40%, rgba(239, 68, 68, 0.4), transparent 50%), radial-gradient(circle at 60% 60%, rgba(245, 158, 11, 0.3), transparent 60%);"></div>
-              <div style="position:relative; z-index:2;">
-                <h4 id="heatmap-hero-title" style="font-size:16px; font-weight:800;">Loading primary hotspot...</h4>
-                <p id="heatmap-hero-desc" style="font-size:12px; color:#9ca3af; margin-top:4px;">Fetching live crisis data...</p>
-              </div>
-              <div style="position:relative; z-index:2; display:flex; gap:16px;">
-                <div><span id="heatmap-hero-count" style="font-size:22px; font-weight:800; color:#ef4444;">--</span><br><small style="font-size:10.5px; color:#9ca3af;">Active Incidents</small></div>
-                <div><span style="font-size:22px; font-weight:800; color:#10b981;">14 min</span><br><small style="font-size:10.5px; color:#9ca3af;">Avg Dispatch</small></div>
-                <div><span style="font-size:22px; font-weight:800; color:#3b82f6;">6 Units</span><br><small style="font-size:10.5px; color:#9ca3af;">Patrolling</small></div>
+            <div style="background:#111827; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; position:relative; box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+              <!-- Interactive Dhaka Heatmap Leaflet Map -->
+              <div id="heatmap-live-leaflet-map" style="width:100%; height:320px; z-index:1; background:#0f172a;"></div>
+
+              <!-- Hotspot info footer ribbon -->
+              <div style="background:#0f172a; padding:12px 18px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; z-index:2;">
+                <div>
+                  <h4 id="heatmap-hero-title" style="font-size:14.5px; font-weight:800; color:#fff;">Mirpur-10 — Primary Hotspot</h4>
+                  <p id="heatmap-hero-desc" style="font-size:11.5px; color:#9ca3af; margin-top:2px;">Fetching live crisis data...</p>
+                </div>
+                <div style="display:flex; gap:16px;">
+                  <div><span id="heatmap-hero-count" style="font-size:20px; font-weight:800; color:#ef4444;">--</span><br><small style="font-size:10px; color:#9ca3af; text-transform:uppercase; font-weight:700;">Active Incidents</small></div>
+                  <div><span style="font-size:20px; font-weight:800; color:#10b981;">14 min</span><br><small style="font-size:10px; color:#9ca3af; text-transform:uppercase; font-weight:700;">Avg Dispatch</small></div>
+                  <div><span id="heatmap-video-pin-count" style="font-size:20px; font-weight:800; color:#3b82f6;">4 Feeds</span><br><small style="font-size:10px; color:#9ca3af; text-transform:uppercase; font-weight:700;">Video Feeds</small></div>
+                </div>
               </div>
             </div>
-            <div id="heatmap-clusters" style="display:flex; flex-direction:column; gap:12px;">
+            <div id="heatmap-clusters" style="display:flex; flex-direction:column; gap:12px; max-height:400px; overflow-y:auto; padding-right:4px;">
               <!-- Dynamically populated from API -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CITIZEN VIDEO REPORTS PANEL ── -->
+        <div class="panel-card" style="padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <div>
+              <h3 style="font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                <span style="width:32px; height:32px; background:#fee2e2; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#ef4444; font-size:14px;"><i class="fa-solid fa-video"></i></span>
+                Citizen Video Case Reports
+              </h3>
+              <p style="color:#6b7280; font-size:12.5px; margin-top:3px;">Videos submitted by citizens through the Citizen Portal — review victim conditions and escalate response.</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span id="hm-video-count-badge" style="font-size:12px; font-weight:700; color:#ef4444; background:#fee2e2; padding:5px 12px; border-radius:20px;">Loading...</span>
+              <button onclick="hmLoadVideoCases()" style="background:#f3f4f6; border:none; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; color:#374151; transition:background 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh
+              </button>
+            </div>
+          </div>
+          <!-- Filter tabs -->
+          <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+            <button class="hm-vid-filter active" data-filter="all" onclick="hmFilterVideos('all', this)">All Cases</button>
+            <button class="hm-vid-filter" data-filter="video" onclick="hmFilterVideos('video', this)">
+              <i class="fa-solid fa-video"></i> With Video
+            </button>
+            <button class="hm-vid-filter" data-filter="High" onclick="hmFilterVideos('High', this)">🔴 High Priority</button>
+            <button class="hm-vid-filter" data-filter="Medium" onclick="hmFilterVideos('Medium', this)">🟡 Medium</button>
+          </div>
+          <div id="hm-video-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+            <!-- Populated dynamically -->
+            <div style="text-align:center; padding:40px 20px; color:#9ca3af; grid-column:1/-1;">
+              <i class="fa-solid fa-spinner fa-spin" style="font-size:24px; margin-bottom:10px; display:block;"></i>
+              <p style="font-size:13px;">Loading video case reports...</p>
             </div>
           </div>
         </div>
       </div>
 
+
       <!-- ================================================================== -->
       <!-- VIEW: NGO VERIFICATION                                             -->
       <!-- ================================================================== -->
       <div id="view-ngo-verification" class="view-section dashboard-content">
+        <!-- Applications from Citizen NGO Registration Form -->
+        <div class="panel-card" style="padding:24px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:800;">🛡️ NGO Registration Applications</h2>
+              <p style="color:#6b7280; font-size:13px;">Applications submitted via the public NGO Registration portal. Review credentials and approve or reject.</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span id="ngo-app-pending-badge" style="font-size:12px; font-weight:700; color:#f59e0b; background:#fef3c7; padding:6px 12px; border-radius:20px;">Loading...</span>
+              <button onclick="loadNGOApplications()" style="background:#f3f4f6; border:none; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; color:#374151; transition:background 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh
+              </button>
+            </div>
+          </div>
+          <div id="ngo-applications-list">
+            <div style="text-align:center; padding:40px; color:#9ca3af;">
+              <i class="fa-solid fa-spinner fa-spin" style="font-size:24px; margin-bottom:10px; display:block;"></i>
+              <p style="font-size:13px;">Loading applications...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Backend Pending NGOs (Existing Table) -->
         <div class="panel-card" style="padding:24px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div>
-              <h2 style="font-size:20px; font-weight:800;">🛡️ NGO Partner Verification Portal</h2>
+              <h3 style="font-size:17px; font-weight:800;">🏛️ Registered NGO Partner Verification</h3>
               <p style="color:#6b7280; font-size:13px;">Review official registration credentials and verify non-profit relief providers.</p>
             </div>
-            <span style="font-size:12px; font-weight:700; color:#059669; background:#e6f7f0; padding:6px 12px; border-radius:20px;">
-              3 Pending Reviews
+            <span id="ngo-verify-pending-badge" style="font-size:12px; font-weight:700; color:#059669; background:#e6f7f0; padding:6px 12px; border-radius:20px;">
+              Loading...
             </span>
           </div>
-
           <table class="custom-table">
             <thead>
               <tr>
@@ -1017,6 +1080,7 @@
           </table>
         </div>
       </div>
+
 
       <!-- ================================================================== -->
       <!-- VIEW: TRENDS & ANALYTICS                                           -->
@@ -1691,6 +1755,96 @@
     </div>
   </div>
 
+  <!-- Modal 7: Emergency Video Intelligence Player -->
+  <div class="modal-backdrop" id="modal-video-viewer" style="z-index: 10000;">
+    <div class="modal-dialog" style="max-width: 860px; width: 92%; border-radius: 16px; overflow: hidden; background: #ffffff;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #111827 0%, #1f2937 100%); color: #ffffff; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 5px;">
+            <span class="hm-rec-dot" style="display:inline-block;"></span> LIVE FOOTAGE
+          </span>
+          <h3 class="modal-title" id="hm-viewer-title" style="color: #ffffff; font-size: 16px; font-weight: 800; margin: 0;">
+            Citizen Emergency Case Video
+          </h3>
+          <span id="hm-viewer-priority-pill" style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #fee2e2; color: #ef4444;">
+            High Priority
+          </span>
+        </div>
+        <button class="modal-close-btn" onclick="closeVideoModal()" style="color: #ffffff; opacity: 0.8; font-size: 24px;">&times;</button>
+      </div>
+      
+      <div class="modal-body" style="padding: 16px 20px; background: #f9fafb;">
+        <!-- Video Viewport Container -->
+        <div class="hm-video-player-container" style="margin-bottom: 16px;">
+          <div class="hm-hud-overlay">
+            <span class="hm-hud-pill">
+              <span class="hm-rec-dot" style="display:inline-block; margin-right:4px;"></span>
+              <span id="hm-hud-cam-id">CAM #01 · CITIZEN SUBMISSION</span>
+            </span>
+            <span class="hm-hud-pill" id="hm-hud-gps-tag">
+              GPS: 23.8067° N, 90.3687° E
+            </span>
+          </div>
+          
+          <!-- Native Video Element -->
+          <video id="hm-video-element" controls autoplay playsinline style="width: 100%; display: block; background: #000; object-fit: contain;">
+          </video>
+          
+          <!-- Fallback procedural field cam canvas (JS sets pixel dimensions dynamically) -->
+          <canvas id="hm-video-fallback-canvas" style="display: none; width: 100%; background: #041712;"></canvas>
+
+          <div class="hm-hud-watermark">
+            🛡 CAREBRIDGE EMERGENCY INTELLIGENCE
+          </div>
+        </div>
+
+        <!-- Telemetry & Details Ribbon -->
+        <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Location & Sector</div>
+              <div id="hm-viewer-location" style="font-size: 14px; font-weight: 800; color: #111827; margin-top: 2px;">Mirpur-10 Roundabout, Dhaka</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Reporter / Contact</div>
+              <div id="hm-viewer-reporter" style="font-size: 13px; font-weight: 700; color: #059669; margin-top: 2px;">
+                Tanvir Ahmed · <a id="hm-viewer-tel" href="tel:+8801712889901" style="color: #059669; text-decoration: underline;">+880 1712-889901</a>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Timestamp / Status</div>
+              <div id="hm-viewer-time" style="font-size: 13px; font-weight: 700; color: #374151; margin-top: 2px;">Just now · Active Investigation</div>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid #f3f4f6; padding-top: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 4px;">Incident Synopsis & Victim Condition</div>
+            <p id="hm-viewer-desc" style="font-size: 13px; color: #374151; line-height: 1.5; margin: 0;">
+              Rapid flash flood water reached 4 feet. Multiple elderly victims stranded inside ground-floor homes requiring evacuation.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; background: #ffffff; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="hm-btn-locate-map" class="btn-secondary-action" onclick="hmLocateCaseOnMap()" style="padding: 8px 14px; font-size: 12px; font-weight: 700;">
+            <i class="fa-solid fa-map-location-dot" style="color: #059669;"></i> Center on Heatmap
+          </button>
+          <button type="button" id="hm-btn-download" class="btn-secondary-action" onclick="hmDownloadFootage()" style="padding: 8px 14px; font-size: 12px; font-weight: 700;">
+            <i class="fa-solid fa-download"></i> Save Video
+          </button>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn-secondary-action" onclick="closeVideoModal()">Close</button>
+          <button type="button" id="hm-btn-dispatch" class="btn-primary-action" onclick="hmModalDispatch()" style="background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);">
+            <i class="fa-solid fa-truck-medical"></i> Dispatch Rapid Response
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Slide-out Drawer: Case Inspection Details -->
   <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeCaseDetailsDrawer()"></div>
   <aside class="side-drawer" id="case-details-drawer">
@@ -1721,6 +1875,20 @@
         <p id="drawer-case-desc" style="font-size:12.5px; color:#4b5563; margin-top:4px; line-height:1.6; background:#f9fafb; padding:12px; border-radius:8px; border:1px solid #f3f4f6;">
           Incident details loading...
         </p>
+      </div>
+
+      <!-- Citizen Video Evidence Section -->
+      <div id="drawer-video-section" style="display:none; background:#fff5f5; border:1px solid #fee2e2; border-radius:10px; padding:12px 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <span style="font-size:11px; font-weight:800; color:#ef4444; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-video"></i> Citizen Video Evidence
+          </span>
+          <span id="drawer-video-size" style="font-size:10.5px; font-weight:700; color:#991b1b; background:#fee2e2; padding:2px 8px; border-radius:10px;">HD</span>
+        </div>
+        <p style="font-size:11.5px; color:#4b5563; margin-bottom:10px;">Citizen submitted real video recording with this distress report.</p>
+        <button type="button" id="drawer-watch-video-btn" onclick="openDrawerVideoViewer()" style="width:100%; padding:9px 12px; background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; border:none; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(239,68,68,0.3);">
+          <i class="fa-solid fa-play"></i> Watch Attached Video Evidence
+        </button>
       </div>
 
       <div>
@@ -1794,9 +1962,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-  <!-- App Data & Scripts -->
+  <!-- App Data & Scripts (load order matters) -->
+  <script src="video-store.js"></script>
   <script src="api.js"></script>
-  <script src="auth.js"></script>
+  <!-- auth.js already loaded in <head> for the auth guard -->
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
